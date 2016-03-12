@@ -86,6 +86,7 @@ namespace LZ78Encoding
                     }
                     else
                     {
+
                         if (index1 == -1)
                         {
                             //è la prima volta che analizzo una nuova lettera non nel dizionario per index1
