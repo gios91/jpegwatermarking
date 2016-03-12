@@ -19,6 +19,8 @@ namespace LZ78Encoding
             int dictIndex = 1;              //indice di entry nel dizionario
             string sc1 = string.Empty;
             int dictIndexNewChars = stringToEncode.Length+1;              //indice di entry nel dizionario dei nuovi caratteri
+            int dimIndex0 = 0; //dimensione dell'ultimo match trovato su index0
+            int dimIndex1 = 0;
             while (i < stringToEncode.Length)
             {
                 char c = stringToEncode[i]; 
@@ -29,6 +31,7 @@ namespace LZ78Encoding
                     {
                         index0 = dict[sc1][0];
                         s = sc1;
+                        dimIndex0 = sc1.Length;
                         i++;
                     }
                     else
@@ -40,7 +43,7 @@ namespace LZ78Encoding
                             row[0] = dictIndex; row[1] = 0; row[2] = dictIndexNewChars;
                             dictNewChars.Add(dictIndexNewChars, sc1);
                             dict.Add(sc1, row);
-                            sc1 = string.Empty; 
+                            sc1 = string.Empty;
                             index0 = -1; index1 = -1;
                             dictIndex++;
                             dictIndexNewChars++;
@@ -48,9 +51,18 @@ namespace LZ78Encoding
                             s = string.Empty;
                             continue;
                         }
-                        step = 1;
-                        s = string.Empty;
-                        sc1 = sc1.Substring(0, sc1.Length - 1);
+                        else if (sottoStringa(sc1, dict.Keys))
+                        {
+                            i++;
+                            s = sc1;
+                            continue;
+                        }
+                        else {
+                            step = 1;
+                            s = string.Empty;
+                            sc1 = sc1.Substring(0, sc1.Length -(sc1.Length-dimIndex0));
+                            dimIndex0 = 0;
+                        }
                     }
                 }
                 if (step == 1)
@@ -60,13 +72,16 @@ namespace LZ78Encoding
                     {
                         index1 = dict[sc2][0];
                         s = sc2;
-                        
+                        dimIndex1 = sc2.Length;
                         i++;
                         if (i == stringToEncode.Length) {
                             int[] row = new int[3]; //tupla con [ entry , index0, index1 ]
                             row[0] = dictIndex; row[1] = index0; row[2] = index1;
                             string conc = string.Concat(sc1, sc2);
                             dict.Add(conc, row);
+                            
+                           
+
                         }
                     }
                     else
@@ -85,10 +100,17 @@ namespace LZ78Encoding
                             i++;
                             s = string.Empty;
                         }
+                        else if (sottoStringa(sc2, dict.Keys))
+                        {
+                            i++;
+                            s = sc2;
+                            continue;
+                        }
                         else
                         {
                             //add to dict    
-                            sc2 = sc2.Substring(0, sc2.Length - 1);
+                            sc2 = sc2.Substring(0, sc2.Length - (sc2.Length - dimIndex1));
+                            dimIndex1 = 0;
 
                             int[] row = new int[3]; //tupla con [ entry , index0, index1 ]
                             row[0] = dictIndex; row[1] = index0; row[2] = index1;
@@ -109,7 +131,7 @@ namespace LZ78Encoding
 
         static void Main(string[] args)
         {
-            string s = "acbbacbccaabbccb";
+            string s = "acbbacbccaabbccbccbaaccbaaccbaarccbrccarcc";
             //string s = "acbbc";
             LZ78EncoderIF enc = new LZ78Encoder();
             Tuple<Dictionary<string, int[]>, Dictionary<int, string>> result = enc.getEncoding(s);
@@ -123,5 +145,22 @@ namespace LZ78Encoding
                 Console.WriteLine(k2 +" , "+ dictNewChars[k2]);
             Console.ReadLine();
         }
-    }
-}
+
+        private bool sottoStringa(string sc1, Dictionary<string, int[]>.KeyCollection keys)
+        {
+            bool verificato=false;
+            foreach (String k in keys) {
+                if (k.Contains(sc1))
+                {
+                    int index = k.IndexOf(sc1);
+                    if (index == 0)
+                    {
+                        verificato = true;
+                        break;
+                    }
+                }
+            }
+            return verificato;
+        }
+    }     
+ }
