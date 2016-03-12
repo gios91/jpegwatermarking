@@ -79,9 +79,6 @@ namespace LZ78Encoding
                             row[0] = dictIndex; row[1] = index0; row[2] = index1;
                             string conc = string.Concat(sc1, sc2);
                             dict.Add(conc, row);
-                            
-                           
-
                         }
                     }
                     else
@@ -111,7 +108,6 @@ namespace LZ78Encoding
                             //add to dict    
                             sc2 = sc2.Substring(0, sc2.Length - (sc2.Length - dimIndex1));
                             dimIndex1 = 0;
-
                             int[] row = new int[3]; //tupla con [ entry , index0, index1 ]
                             row[0] = dictIndex; row[1] = index0; row[2] = index1;
                             string conc = string.Concat(sc1, sc2);
@@ -132,7 +128,6 @@ namespace LZ78Encoding
         static void Main(string[] args)
         {
             string s = "acbbacbccaabbccbccbaaccbaaccbaarccbrccarcc";
-            //string s = "acbbc";
             LZ78EncoderIF enc = new LZ78Encoder();
             Tuple<Dictionary<string, int[]>, Dictionary<int, string>> result = enc.getEncoding(s);
             Dictionary<string, int[]> dict = result.Item1;
