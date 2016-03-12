@@ -105,6 +105,7 @@ namespace LZ78Encoding
                         {
                             i++;
                             s = sc2;
+
                             continue;
                         }
                         else
