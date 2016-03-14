@@ -34,6 +34,7 @@ namespace JPEGWatermarking
                 int[] array = new int[2];
                 array[0] = v[1];
                 array[1] = v[2];
+                //modifica
                 lista.Add(array);
             }
             //enc.getByteEncoding(dictNewChars, lista);
