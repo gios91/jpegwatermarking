@@ -12,7 +12,7 @@ namespace JPEGWatermarking
     {
         static void Main(string[] args)
         {
-            string path = "C:\\Users\\Francesco\\OneDrive\\Progetto_Teoria_Informazione\\canto_I_div.txt";
+            string path = "C:\\Users\\Francesco\\OneDrive\\Progetto_Teoria_Informazione\\canto_1_v2.txt";
             string s = leggiDaFile(path);
             //string s = "acbbacbccaabbccbccbaaccbaaccbaarccbrccarcc";
             //string s = "acbbacbccaabbcccarcc";
@@ -34,6 +34,7 @@ namespace JPEGWatermarking
                 int[] array = new int[2];
                 array[0] = v[1];
                 array[1] = v[2];
+                //modifica
                 lista.Add(array);
             }
             //enc.getByteEncoding(dictNewChars, lista);
@@ -56,7 +57,11 @@ namespace JPEGWatermarking
                 {
                     s += line;
                     numline++;
-                    if (numline == 1)
+                    int x=0;
+                    if (numline == 9) {
+                         x = 0;
+                    }
+                    if (numline == 10)
                         break;
                 }
             }
