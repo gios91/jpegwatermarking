@@ -12,7 +12,7 @@ namespace JPEGWatermarking
     {
         static void Main(string[] args)
         {
-            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\canto_I_div.txt";
+            string path = "C:\\Users\\Francesco\\OneDrive\\Progetto_Teoria_Informazione\\canto_1_v2.txt";
             string s = leggiDaFile(path);
             //string s = "acbbacbccaabbccbccbaaccbaaccbaarccbrccarcc";
             //string s = "acbbacbccaabbcccarcc";
@@ -56,7 +56,11 @@ namespace JPEGWatermarking
                 {
                     s += line;
                     numline++;
-                    if (numline == 5)
+                    int x=0;
+                    if (numline == 9) {
+                         x = 0;
+                    }
+                    if (numline == 10)
                         break;
                 }
             }

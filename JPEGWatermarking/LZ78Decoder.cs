@@ -33,9 +33,18 @@ namespace LZ78Encoding
                         point2 = dictChars[row[1]];
                     }
                     string conc = point1 + point2;
-                    decoded = decoded + conc;
-                    dictDec.Add(countTuple, conc);
-                    countTuple++;
+                    if (!point2.Equals("EOF"))
+                    {
+                        decoded = decoded + conc;
+                        dictDec.Add(countTuple, conc);
+                        countTuple++;
+                    }
+                    else
+                    {
+                        decoded = decoded + point1;
+                        dictDec.Add(countTuple, conc);
+                        countTuple++;
+                    }
                 }
             }
             return decoded;

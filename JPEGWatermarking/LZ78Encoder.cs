@@ -84,8 +84,12 @@ namespace LZ78Encoding
                         else {
                             step = 1;
                             s = string.Empty;
+                            i = i - ((sc1.Length - dimIndex0) - 1);
                             sc1 = sc1.Substring(0, sc1.Length -(sc1.Length-dimIndex0));
                             dimIndex0 = 0;
+                            s = string.Empty;
+                            continue;
+                         
                         }
                     }
                 }
@@ -144,6 +148,7 @@ namespace LZ78Encoding
                         else
                         {
                             //add to dict    
+                            i = i - ((sc2.Length - dimIndex1)-1);
                             sc2 = sc2.Substring(0, sc2.Length - (sc2.Length - dimIndex1));
                             dimIndex1 = 0;
                             int[] row = new int[3]; //tupla con [ entry , index0, index1 ]
