@@ -40,5 +40,10 @@ namespace LZ78Encoding
             }
             return decoded;
         }
+
+        public Tuple<Dictionary<int, string>, List<int[]>> getEncodingFromByteArray(byte[] encoding)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
