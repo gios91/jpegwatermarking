@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,6 +35,15 @@ namespace LZ78Encoding
                         s = sc1;
                         dimIndex0 = sc1.Length;
                         i++;
+                        if (i == stringToEncode.Length)
+                        {   
+                            //caso EOF dopo sc1
+                            string eof = "EOF";
+                            //dictNewChars.Add(dictIndexNewChars, eof);
+                            int[] row = new int[3]; //tupla con [ entry , index0, index1 ]
+                            row[0] = dictIndex; row[1] = index0; row[2] = dictIndexNewChars;
+                            dict.Add(sc1+" "+eof, row);
+                        }
                     }
                     else
                     {
@@ -40,13 +51,26 @@ namespace LZ78Encoding
                         {
                             //è la prima volta che analizzo una nuova lettera non presente nel dizionario
                             int[] row = new int[3]; //tupla con [ entry , index0, index1 ]
-                            row[0] = dictIndex; row[1] = 0; row[2] = dictIndexNewChars;
-                            dictNewChars.Add(dictIndexNewChars, sc1);
+                            row[0] = dictIndex; row[1] = 0;
+                            if (!dictNewChars.ContainsValue(sc1))
+                            {
+                                row[2] = dictIndexNewChars;
+                                dictNewChars.Add(dictIndexNewChars, sc1);
+                                dictIndexNewChars++;
+                            }
+                            else
+                            {
+                                Dictionary<int, string>.KeyCollection keys = dictNewChars.Keys;
+                                foreach (int k in keys)
+                                    if (dictNewChars[k].Equals(sc1))
+                                    {
+                                        row[2] = k; break;
+                                    }
+                            }
                             dict.Add(sc1, row);
                             sc1 = string.Empty;
                             index0 = -1; index1 = -1;
                             dictIndex++;
-                            dictIndexNewChars++;
                             i++;
                             s = string.Empty;
                             continue;
@@ -79,7 +103,6 @@ namespace LZ78Encoding
                             row[0] = dictIndex; row[1] = index0; row[2] = index1;
                             string conc = string.Concat(sc1, sc2);
                             dict.Add(conc, row);
-                
                         }
                     }
                     else
@@ -88,14 +111,29 @@ namespace LZ78Encoding
                         {
                             //è la prima volta che analizzo una nuova lettera non nel dizionario per index1
                             int[] row1 = new int[3]; //tupla con [ entry , index0, index1 ]
-                            row1[0] = dictIndex; row1[1] = 0; row1[2] = dictIndexNewChars;
-                            dictNewChars.Add(dictIndexNewChars, sc2);
+                            row1[0] = dictIndex; row1[1] = index0;
+                            if (!dictNewChars.ContainsValue(sc2))
+                            {
+                                row1[2] = dictIndexNewChars;
+                                dictNewChars.Add(dictIndexNewChars, sc2);
+                                dictIndexNewChars++;
+                            }
+                            else
+                            {
+                                Dictionary<int, string>.KeyCollection keys = dictNewChars.Keys;
+                                foreach (int k in keys)
+                                    if (dictNewChars[k].Equals(sc2))
+                                    {
+                                        row1[2] = k; break;
+                                    }
+                            }
                             dict.Add(string.Concat(sc1, sc2), row1);
                             sc1 = string.Empty;
                             index0 = -1; index1 = -1;
                             dictIndex++;
                             dictIndexNewChars++;
                             i++;
+                            step = 0;
                             s = string.Empty;
                         }
                         else if (sottoStringa(sc2, dict.Keys))
@@ -118,12 +156,42 @@ namespace LZ78Encoding
                             step = 0;
                             dictIndex++;
                             s = string.Empty;
-                                //arretra l'indice di scorrimento per valutare il carattere scartato in precedenza
+                            //arretra l'indice di scorrimento per valutare il carattere scartato in precedenza
                         }
                     }
                 }
             }
             return Tuple.Create(dict,dictNewChars);
+        }
+
+        public byte[] getByteArrayEncoding(Dictionary<int, string> dictChars, List<int[]> dict)
+        {
+            var binFormatter = new BinaryFormatter();
+            var mStream = new MemoryStream();
+            binFormatter.Serialize(mStream, dict);
+            //This gives you the byte array.
+            byte[] byteDict = mStream.ToArray();
+            Console.WriteLine(byteDict.Length);
+            foreach (byte b in byteDict)
+            {
+                Console.Write(Convert.ToString(b,2)+" ");
+            }
+            return byteDict;
+        }
+
+        public byte[] getByteEncoding(Dictionary<int, string> dictChars, List<int[]> dict)
+        {
+            int dataDim = 0;
+            foreach (int[] v in dict)
+            {
+                var binFormatter = new BinaryFormatter();
+                var mStream = new MemoryStream();
+                binFormatter.Serialize(mStream, v);
+                //This gives you the byte array.
+                dataDim += mStream.ToArray().Length;
+            }
+            Console.WriteLine("dim in byte dei dati:" + dataDim); 
+            return null;
         }
 
         private bool sottoStringa(string sc1, Dictionary<string, int[]>.KeyCollection keys)

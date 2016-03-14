@@ -1,6 +1,7 @@
 ﻿using LZ78Encoding;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +12,11 @@ namespace JPEGWatermarking
     {
         static void Main(string[] args)
         {
-            string s = "acbbacbccaabbccbccbaaccbaaccbaarccbrccarcc";
+            string path = "C:\\Users\\Francesco\\OneDrive\\Progetto_Teoria_Informazione\\canto_I_div.txt";
+            string s = leggiDaFile(path);
+            //string s = "acbbacbccaabbccbccbaaccbaaccbaarccbrccarcc";
+            //string s = "acbbacbccaabbcccarcc";
+            Console.WriteLine(s);
             //string s = "acbbc";
             LZ78EncoderIF enc = new LZ78Encoder();
             Tuple<Dictionary<string, int[]>, Dictionary<int, string>> result = enc.getEncoding(s); 
@@ -29,14 +34,33 @@ namespace JPEGWatermarking
                 int[] array = new int[2];
                 array[0] = v[1];
                 array[1] = v[2];
-                //modifica
                 lista.Add(array);
             }
+            //enc.getByteEncoding(dictNewChars, lista);
+            //enc.getByteArrayEncoding(dictNewChars, lista);
             LZ78DecoderIF dec = new LZ78Decoder();
             string decoded = dec.getDecoding(dictNewChars, lista);
             Console.WriteLine("stringa decodificata :"+decoded);
             Console.WriteLine("stringa decodificata uguale all' originale? "+decoded.Equals(s));
             Console.ReadLine();
+        }
+
+        public static string leggiDaFile(string path)
+        {
+            int numline = 0;
+            string s = string.Empty;
+            using (var reader = new StreamReader(path))
+            {
+                string line = string.Empty;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    s += line;
+                    numline++;
+                    if (numline == 1)
+                        break;
+                }
+            }
+            return s;
         }
     }
 }
