@@ -8,6 +8,7 @@ namespace LZ78Encoding
     {
         string getDecoding(Dictionary<int, string> dictChars, List<int[]> dict);
 
+        //TODO
         Tuple<Dictionary<int, string>, List<int[]>> getEncodingFromByteArray(byte[] encoding);
     }
 }
