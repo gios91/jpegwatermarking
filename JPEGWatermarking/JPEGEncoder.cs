@@ -51,6 +51,46 @@ namespace JPEGEncoding
             return Tuple.Create(YMatrix, CbMatrix, CrMatrix);
         }
 
+        public Tuple<float[,], float[,]> espandiCbCr(float[,] cbMatrixSub, float[,] crMatrixSub)
+        {
+            int rows = cbMatrixSub.GetLength(0);
+            int columns = cbMatrixSub.GetLength(1);
+            float[,] CbExp = new float[rows * 2, columns * 2];
+            float[,] CrExp = new float[rows * 2, columns * 2];
+            for (int i=0; i < rows; i++) 
+                for (int j=0; j < columns; j++)
+                {
+                    CbExp[2 * i, 2 * j] = cbMatrixSub[i, j];
+                    CbExp[2 * i, 2 * j + 1 ] = cbMatrixSub[i, j];
+                    CbExp[2 * i + 1, 2 * j] = cbMatrixSub[i, j];
+                    CbExp[2 * i + 1, 2 * j + 1] = cbMatrixSub[i, j];
+                    CrExp[2 * i, 2 * j] = crMatrixSub[i, j];
+                    CrExp[2 * i, 2 * j + 1] = crMatrixSub[i, j];
+                    CrExp[2 * i + 1, 2 * j] = crMatrixSub[i, j];
+                    CrExp[2 * i + 1, 2 * j + 1] = crMatrixSub[i, j];
+                }
+            return Tuple.Create(CbExp, CrExp);
+        }
+
+        public Tuple<byte[,], byte[,], byte[,]> getRGBFromYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix)
+        {
+            int xPx = YMatrix.GetLength(0);
+            int yPx = YMatrix.GetLength(1);
+            byte[,] RMatrix = new byte[xPx, yPx];
+            byte[,] GMatrix = new byte[xPx, yPx];
+            byte[,] BMatrix = new byte[xPx, yPx];
+            for (int i = 0; i < xPx; i++)
+                for (int j = 0; j < yPx; j++)
+                {
+                   // RGB rgb = new RGB(RMatrix[i, j], GMatrix[i, j], BMatrix[i, j]);
+                    RGB rgb = YCbCrToRGB(new YCbCr(YMatrix[i,j], CbMatrix[i, j], CrMatrix[i, j]));
+                    RMatrix[i, j] = rgb.R;
+                    GMatrix[i, j] = rgb.G;
+                    BMatrix[i, j] = rgb.B;
+                }
+            return Tuple.Create(RMatrix, GMatrix, BMatrix);
+        }
+
         public Tuple<float[,], float[,]> get420Subsampling(float[,] Cb, float[,] Cr)
         {
             //SI ASSUME PER ORA CHE LE MATRICI YCC ABBIANO DIMENSIONE MULTIPLA DI 16 px
@@ -101,6 +141,15 @@ namespace JPEGEncoding
             float Cr = (float)(0.5000 * fr - 0.4184 * fg - 0.0816 * fb);
 
             return new YCbCr(Y, Cb, Cr);
+        }
+        
+        private RGB YCbCrToRGB(YCbCr ycbcr)
+        {
+            float r = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y + 0.0000 * ycbcr.Cb + 1.4022 * ycbcr.Cr)));
+            float g = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y - 0.3456 * ycbcr.Cb - 0.7145 * ycbcr.Cr)));
+            float b = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y + 1.7710 * ycbcr.Cb + 0.0000 * ycbcr.Cr)));
+
+            return new RGB((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
         }
 
         public void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height)
@@ -169,7 +218,7 @@ namespace JPEGEncoding
         {
             int x = CbSub.GetLength(0);
             int y = CbSub.GetLength(1);
-            Console.WriteLine("Chroma Cb Sub Matrix");
+            Console.WriteLine("Matrix  Cb");
             for (int i = 0; i < x; i++)
             {
                 for (int j = 0; j < y; j++)
@@ -178,7 +227,7 @@ namespace JPEGEncoding
                 }
                 Console.WriteLine();
             }
-            Console.WriteLine("Chroma Cr Sub Matrix");
+            Console.WriteLine("Matrix  Cr");
             for (int i = 0; i < x; i++)
             {
                 for (int j = 0; j < y; j++)
