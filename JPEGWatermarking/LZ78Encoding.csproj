@@ -45,7 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BitmapToRGB.cs" />
+    <Compile Include="JPEGEncoder.cs" />
+    <Compile Include="TestJPEG.cs" />
     <Compile Include="LZ78Encoder.cs" />
     <Compile Include="LZ78DecoderIF.cs" />
     <Compile Include="LZ78EncoderIF.cs" />

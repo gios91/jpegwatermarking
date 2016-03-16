@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 using System.Drawing;
 
-namespace BitmapToRGB
+namespace JPEGEncoding
 {
-    class RGBTest
+    class JPEGEncoder
     {
-        public static Tuple<byte[,], byte[,], byte[,]> rgbTest(string pathFile)
+        //INSERIRE UN'INTERFACCIA JPEGEncoderIF
+
+        public Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(string pathFile)
         {
             Bitmap b = new Bitmap(pathFile);
             int yPx = b.Height;
@@ -30,7 +32,7 @@ namespace BitmapToRGB
             return Tuple.Create(RMatrix, GMatrix, BMatrix);
         }
 
-        public static Tuple<float[,], float[,], float[,]> YCbCrTest(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix)
+        public Tuple<float[,], float[,], float[,]> getYCbCrMatrix(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix)
         {
             int xPx = RMatrix.GetLength(0);
             int yPx = RMatrix.GetLength(1);
@@ -48,8 +50,45 @@ namespace BitmapToRGB
                 }
             return Tuple.Create(YMatrix, CbMatrix, CrMatrix);
         }
+
+        public Tuple<float[,], float[,]> get420Subsampling(float[,] Cb, float[,] Cr)
+        {
+            //SI ASSUME PER ORA CHE LE MATRICI YCC ABBIANO DIMENSIONE MULTIPLA DI 18 px
+            int rows = Cb.GetLength(0);
+            int columns = Cb.GetLength(1);
+            float[,] CbSub = new float[rows / 2, columns / 2];
+            float[,] CrSub = new float[rows / 2, columns / 2];
+            for (int i = 0; i < CbSub.Length; i += 8)
+                for (int j = 0; j < CrSub.Length; j += 8)
+                {
+                    Tuple<float[,], float[,]> result = get420SubsamplingBlock(Cb, Cr, 2*i, 2*j);
+                    float[,] CbBlock = result.Item1;
+                    float[,] CrBlock = result.Item2;
+                    for (int k = i; k<8; k++)
+                        for (int w = j; w<8; j++)
+                        {
+                            CbSub[i,j] = CbBlock[i,j];
+                            CrSub[i,j] = CrBlock[i,j];
+                        }
+                }
+            return Tuple.Create(CbSub, CrSub);
+        }
         
-        public static YCbCr RGBToYCbCr(RGB rgb)
+        public Tuple<float[,], float[,]> get420SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w)
+        {
+            //k = indice di riga da cui parte il blocco, w=indice di colonna
+            float[,] CbSub = new float[8, 8];
+            float[,] CrSub = new float[8, 8];
+            for (int i = 0; i<8; i++) 
+                for(int j = 0; j<8; j++)
+                {
+                    CbSub[i, j] = (Cb[k + 2*i,w + 2*j] + Cb[k + 2*i, w + 2*j + 1] + Cb[k + 2*i + 1, w + 2*j] + Cb[k + 2*i + 1, w + 2*j + 1]) / 4;
+                    CrSub[i, j] = (Cr[k + 2*i, w + 2*j] + Cr[k + 2*i, w + 2*j + 1] + Cr[k + 2*i + 1, w + 2*j] + Cr[k + 2*i + 1, w + 2*j + 1]) / 4;
+                }
+            return Tuple.Create(CbSub,CrSub);
+        }
+        
+        private YCbCr RGBToYCbCr(RGB rgb)
         {
             float fr = (float)rgb.R / 255;
             float fg = (float)rgb.G / 255;
@@ -62,7 +101,7 @@ namespace BitmapToRGB
             return new YCbCr(Y, Cb, Cr);
         }
 
-        private static void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height)
+        public void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height)
         {
             Console.WriteLine("R Matrix");
             for (int i = 0; i < width; i++)
@@ -93,7 +132,7 @@ namespace BitmapToRGB
             }
         }
 
-        private static void printMatriciYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix, int width, int height)
+        public void printMatriciYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix, int width, int height)
         {
             Console.WriteLine("Y Matrix");
             for (int i = 0; i < width; i++)
@@ -123,30 +162,34 @@ namespace BitmapToRGB
                 Console.WriteLine();
             }
         }
-        
-        /*
-        public static void Main(string[] args)
-        {
-            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\feed.jpg";
-            Tuple<byte[,],byte[,], byte[,]> rgbResult = rgbTest(path);
-            byte[,] RMatrix = rgbResult.Item1;
-            byte[,] GMatrix = rgbResult.Item2;
-            byte[,] BMatrix = rgbResult.Item3;
-            int xPx = RMatrix.GetLength(0);
-            int yPx = RMatrix.GetLength(1);
-            printMatriciRGB(RMatrix, GMatrix, BMatrix, xPx, yPx);
-            Tuple<float[,], float[,], float[,]> yCbCrResult = YCbCrTest(RMatrix, GMatrix, BMatrix);
-            float[,] YMatrix = yCbCrResult.Item1;
-            float[,] CbMatrix = yCbCrResult.Item2;
-            float[,] CrMatrix = yCbCrResult.Item3;
-            printMatriciYCbCr(YMatrix, CbMatrix, CrMatrix,xPx,yPx);
-        }
-        */
 
+        public void printMatrici(float[,] CbSub, float[,] CrSub)
+        {
+            int x = CbSub.GetLength(0);
+            int y = CbSub.GetLength(1);
+            Console.WriteLine("Chroma Cb Sub Matrix");
+            for (int i = 0; i < x; i++)
+            {
+                for (int j = 0; j < y; j++)
+                {
+                    Console.Write(CbSub[i, j] + " ");
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("Chroma Cr Sub Matrix");
+            for (int i = 0; i < x; i++)
+            {
+                for (int j = 0; j < y; j++)
+                {
+                    Console.Write(CrSub[i, j] + " ");
+                }
+                Console.WriteLine();
+            }
+        }
     }//RGBTest
 
 
-        public struct RGB
+    public struct RGB
         {
             private byte _r;
             private byte _g;

@@ -10,6 +10,7 @@ namespace JPEGWatermarking
 {
     class TestLZ78
     {
+        /*
         static void Main(string[] args)
         {
             string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\canto_1_v2.txt";
@@ -44,6 +45,7 @@ namespace JPEGWatermarking
             Console.WriteLine("stringa decodificata uguale all' originale? "+decoded.Equals(s));
             Console.ReadLine();
         }
+        */
 
         public static string leggiDaFile(string path)
         {
