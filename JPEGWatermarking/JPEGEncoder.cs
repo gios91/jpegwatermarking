@@ -53,22 +53,24 @@ namespace JPEGEncoding
 
         public Tuple<float[,], float[,]> get420Subsampling(float[,] Cb, float[,] Cr)
         {
-            //SI ASSUME PER ORA CHE LE MATRICI YCC ABBIANO DIMENSIONE MULTIPLA DI 18 px
+            //SI ASSUME PER ORA CHE LE MATRICI YCC ABBIANO DIMENSIONE MULTIPLA DI 16 px
             int rows = Cb.GetLength(0);
             int columns = Cb.GetLength(1);
             float[,] CbSub = new float[rows / 2, columns / 2];
             float[,] CrSub = new float[rows / 2, columns / 2];
-            for (int i = 0; i < CbSub.Length; i += 8)
-                for (int j = 0; j < CrSub.Length; j += 8)
+            int rowsSub = rows/2;
+            int columnsSub = rows/2;
+            for (int i = 0; i < rowsSub; i += 8)
+                for (int j = 0; j < columnsSub; j += 8)
                 {
                     Tuple<float[,], float[,]> result = get420SubsamplingBlock(Cb, Cr, 2*i, 2*j);
                     float[,] CbBlock = result.Item1;
                     float[,] CrBlock = result.Item2;
-                    for (int k = i; k<8; k++)
-                        for (int w = j; w<8; j++)
+                    for (int k = 0; k<8; k++)
+                        for (int w = 0; w<8; w++)
                         {
-                            CbSub[i,j] = CbBlock[i,j];
-                            CrSub[i,j] = CrBlock[i,j];
+                            CbSub[k+i,w+j] = CbBlock[k,w];
+                            CrSub[k+i,w+j] = CrBlock[k,w];
                         }
                 }
             return Tuple.Create(CbSub, CrSub);
@@ -82,8 +84,8 @@ namespace JPEGEncoding
             for (int i = 0; i<8; i++) 
                 for(int j = 0; j<8; j++)
                 {
-                    CbSub[i, j] = (Cb[k + 2*i,w + 2*j] + Cb[k + 2*i, w + 2*j + 1] + Cb[k + 2*i + 1, w + 2*j] + Cb[k + 2*i + 1, w + 2*j + 1]) / 4;
-                    CrSub[i, j] = (Cr[k + 2*i, w + 2*j] + Cr[k + 2*i, w + 2*j + 1] + Cr[k + 2*i + 1, w + 2*j] + Cr[k + 2*i + 1, w + 2*j + 1]) / 4;
+                    CbSub[i,j] = (Cb[k+2*i,w+2*j] + Cb[k+2*i, w+2*j+1] + Cb[k+2*i+1,w+2*j] + Cb[k+2*i+1,w+2*j+1]) / 4;
+                    CrSub[i,j] = (Cr[k+2*i,w+2*j] + Cr[k+2*i, w+2*j+1] + Cr[k+2*i+1,w+2*j] + Cr[k+2*i+1,w+2*j+1]) / 4;
                 }
             return Tuple.Create(CbSub,CrSub);
         }

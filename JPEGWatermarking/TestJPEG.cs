@@ -11,7 +11,7 @@ namespace JPEGEncoding
     {
         public static void Main(string[] args)
         {
-            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\google_play_256.bmp";
+            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\google_plus_32.bmp";
             JPEGEncoder jpg = new JPEGEncoder();
             Tuple<byte[,],byte[,], byte[,]> rgbResult = jpg.getRGBMatrix(path);
             byte[,] RMatrix = rgbResult.Item1;
