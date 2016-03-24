@@ -1,4 +1,5 @@
-﻿using JPEGEncoding;
+﻿using DCTLib;
+using JPEGEncoding;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -12,8 +13,8 @@ namespace JPEGEncoding
     {
         public static void Main(string[] args)
         {
-            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\google_maps_64.bmp";
-            JPEGEncoder jpg = new JPEGEncoder();
+            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\play.bmp";
+            JPEGEncoderIF jpg = new JPEGEncoder();
 
             Tuple<byte[,], byte[,], byte[,]> rgbResult = jpg.getRGBMatrix(path);
             byte[,] RMatrix = rgbResult.Item1;
@@ -24,10 +25,53 @@ namespace JPEGEncoding
             float[,] YMatrix = yCbCrResult.Item1;
             float[,] CbMatrix = yCbCrResult.Item2;
             float[,] CrMatrix = yCbCrResult.Item3;
-            //jpg.printMatriciYCbCr(YMatrix, CbMatrix, CrMatrix,YMatrix.GetLength(0), YMatrix.GetLength(1));
-            Tuple<float[,], float[,]> chromaResult = jpg.get420Subsampling(CbMatrix, CrMatrix);
+            jpg.printMatriciYCbCr(YMatrix, CbMatrix, CrMatrix,YMatrix.GetLength(0), YMatrix.GetLength(1));
+            //tipo di subsampling applicato
+            int subsamplingType = 0;
+            Tuple<float[,], float[,]> chromaResult = jpg.get420Subsampling(CbMatrix, CrMatrix, subsamplingType);
             float[,] CbMatrixSub = chromaResult.Item1;
             float[,] CrMatrixSub = chromaResult.Item2;
+            Console.WriteLine("SUBSAMPLING Cb");
+            jpg.printMatrice(CbMatrixSub, 32, 32);
+            Console.WriteLine("SUBSAMPLING Cr");
+            jpg.printMatrice(CrMatrixSub, 32, 32);
+
+            /*
+            //Test DCT2D on single block
+            double[,] CbMatrixTest8x8 = new double[8,8];
+            for (int i=0; i<8; i++)
+                for (int j=0; j<8; j++)
+                {
+                    CbMatrixTest8x8[i,j] = (double) CbMatrixSub[i,j];
+                }
+            Console.WriteLine("+++ Blocco 0,0 test matrice Cb +++");
+            jpg.printMatrice(CbMatrixTest8x8, 8, 8);
+            DCT dct = new DCT(8, 8);
+            double[,] CbMatrixTest8x8Result = dct.DCT2D(CbMatrixTest8x8);
+            Console.WriteLine("+++ Blocco 0,0 test DCT +++");
+            jpg.printMatrice(CbMatrixTest8x8Result, 8, 8);
+            */
+
+            /*
+            //Test DCT2D on single block
+            double[,] CbMatrixTest8x8 = new double[8, 8];
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                {
+                    CbMatrixTest8x8[i, j] = (double)CbMatrixSub[i, j];
+                }
+            Console.WriteLine("+++ Blocco 0,0 test matrice Cb +++");
+            jpg.printMatrice(CbMatrixTest8x8, 8, 8);
+            DCT dct = new DCT(8, 8);
+            double[,] CbMatrixTest2x2Result = dct.DCT2D(CbMatrixTest8x8);
+            Console.WriteLine("+++ Blocco 0,0 test DCT +++");
+            jpg.printMatrice(CbMatrixTest2x2Result, 8, 8);
+            double[,] CbMatrixTestInverse = dct.IDCT2D(CbMatrixTest2x2Result);
+            Console.WriteLine("+++ Blocco 0,0 test inverse DCT +++");
+            jpg.printMatrice(CbMatrixTestInverse, 8, 8);
+            */
+
+            /*
             Console.WriteLine("Matrici Chroma Subsampling");
             //jpg.printMatrici(CbMatrixSub, CrMatrixSub);
             Tuple<float[,], float[,]> expResult = jpg.espandiCbCr(CbMatrixSub, CrMatrixSub);
@@ -52,6 +96,8 @@ namespace JPEGEncoding
                 }
             string pathRGB = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\google_maps_64_Chroma.bmp";
             bm.Save(pathRGB);
+            */
+
 
             /*
             //jpg.printMatriciRGB(RMatrix, GMatrix, BMatrix, xPx, yPx);

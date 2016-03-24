@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="JPEGEncoderIF.cs" />
     <Compile Include="DCT.cs" />
     <Compile Include="JPEGEncoder.cs" />
     <Compile Include="TestJPEG.cs" />

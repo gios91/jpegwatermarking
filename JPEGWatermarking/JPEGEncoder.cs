@@ -8,10 +8,8 @@ using System.Drawing;
 
 namespace JPEGEncoding
 {
-    class JPEGEncoder
+    class JPEGEncoder : JPEGEncoderIF
     {
-        //INSERIRE UN'INTERFACCIA JPEGEncoderIF
-
         public Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(string pathFile)
         {
             Bitmap b = new Bitmap(pathFile);
@@ -91,23 +89,21 @@ namespace JPEGEncoding
             return Tuple.Create(RMatrix, GMatrix, BMatrix);
         }
 
-        public Tuple<float[,], float[,]> get420Subsampling(float[,] Cb, float[,] Cr)
+        public Tuple<float[,], float[,]> get420Subsampling(float[,] Cb, float[,] Cr, int type)
         {
             //SI ASSUME PER ORA CHE LE MATRICI YCC ABBIANO DIMENSIONE MULTIPLA DI 16 px
             int rows = Cb.GetLength(0);
             int columns = Cb.GetLength(1);
-            float[,] CbSub = new float[rows / 2, columns / 2];
-            float[,] CrSub = new float[rows / 2, columns / 2];
-            int rowsSub = rows/2;
-            int columnsSub = rows/2;
-            for (int i = 0; i < rowsSub; i += 8)
-                for (int j = 0; j < columnsSub; j += 8)
+            float[,] CbSub = new float[rows, columns];
+            float[,] CrSub = new float[rows, columns];
+            for (int i = 0; i < rows; i += 16)
+                for (int j = 0; j < columns; j += 16)
                 {
-                    Tuple<float[,], float[,]> result = get420SubsamplingBlock(Cb, Cr, 2*i, 2*j);
+                    Tuple<float[,], float[,]> result = get420SubsamplingBlock(Cb, Cr, i, j, type);
                     float[,] CbBlock = result.Item1;
                     float[,] CrBlock = result.Item2;
-                    for (int k = 0; k<8; k++)
-                        for (int w = 0; w<8; w++)
+                    for (int k = 0; k<16; k++)
+                        for (int w = 0; w<16; w++)
                         {
                             CbSub[k+i,w+j] = CbBlock[k,w];
                             CrSub[k+i,w+j] = CrBlock[k,w];
@@ -115,7 +111,51 @@ namespace JPEGEncoding
                 }
             return Tuple.Create(CbSub, CrSub);
         }
-        
+
+
+        public Tuple<float[,], float[,]> get420SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w, int type)
+        {
+            //k = indice di riga da cui parte il blocco, w=indice di colonna
+            //type = { 0 : padding di 0 su blocchi adiacenti; 1 : padding con copia del blocco compresso sui blocchi adiacenti }
+            float[,] CbSub = new float[16, 16];
+            float[,] CrSub = new float[16, 16];
+            if (type == 0)
+            {
+                //padding sui blocchi adiacenti basato sul valore di type
+                for (int i = 0; i < 16; i++)
+                    for (int j = 0; j < 16; j++)
+                    {
+                        CbSub[i, j] = 0;
+                        CrSub[i, j] = 0;
+                    }
+                for (int i = 0; i < 8; i++)
+                    for (int j = 0; j < 8; j++)
+                    {
+                        CbSub[i, j] = (Cb[k + 2 * i, w + 2 * j] + Cb[k + 2 * i, w + 2 * j + 1] + Cb[k + 2 * i + 1, w + 2 * j] + Cb[k + 2 * i + 1, w + 2 * j + 1]) / 4;
+                        CrSub[i, j] = (Cr[k + 2 * i, w + 2 * j] + Cr[k + 2 * i, w + 2 * j + 1] + Cr[k + 2 * i + 1, w + 2 * j] + Cr[k + 2 * i + 1, w + 2 * j + 1]) / 4;
+                    }
+            }
+            else if (type == 1)
+            {
+                for (int i = 0; i < 8; i++)
+                    for (int j = 0; j < 8; j++)
+                    {
+                        float CbVal = (Cb[k + 2 * i, w + 2 * j] + Cb[k + 2 * i, w + 2 * j + 1] + Cb[k + 2 * i + 1, w + 2 * j] + Cb[k + 2 * i + 1, w + 2 * j + 1]) / 4;
+                        float CrVal = (Cr[k + 2 * i, w + 2 * j] + Cr[k + 2 * i, w + 2 * j + 1] + Cr[k + 2 * i + 1, w + 2 * j] + Cr[k + 2 * i + 1, w + 2 * j + 1]) / 4;
+                        CbSub[i, j] = CbVal;
+                        CbSub[i, j+8] = CbVal;
+                        CbSub[i+8, j] = CbVal;
+                        CbSub[i+8, j+8] = CbVal;
+                        CrSub[i, j] = CrVal;
+                        CrSub[i, j + 8] = CrVal;
+                        CrSub[i + 8, j] = CrVal;
+                        CrSub[i + 8, j + 8] = CrVal;
+                    }
+            }
+            return Tuple.Create(CbSub, CrSub);
+        }
+
+        /*
         public Tuple<float[,], float[,]> get420SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w)
         {
             //k = indice di riga da cui parte il blocco, w=indice di colonna
@@ -129,7 +169,8 @@ namespace JPEGEncoding
                 }
             return Tuple.Create(CbSub,CrSub);
         }
-        
+        */
+
         private YCbCr RGBToYCbCr(RGB rgb)
         {
             float fr = (float)rgb.R / 255;
@@ -209,6 +250,30 @@ namespace JPEGEncoding
                 for (int j = 0; j < height; j++)
                 {
                     Console.Write(CrMatrix[i, j] + " ");
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public void printMatrice(float[,] M, int row, int column)
+        {
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < column; j++)
+                {
+                    Console.Write(M[i, j] + " ");
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public void printMatrice(double[,] M, int row, int column)
+        {
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < column; j++)
+                {
+                    Console.Write(M[i, j] + " ");
                 }
                 Console.WriteLine();
             }
