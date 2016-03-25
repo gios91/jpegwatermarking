@@ -13,29 +13,32 @@ namespace JPEGEncoding
     {
         public static void Main(string[] args)
         {
-            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\play.bmp";
+            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\red_square_32.bmp";
+            //tipo di subsampling applicato
+            int subsamplingType = 0;
             JPEGEncoderIF jpg = new JPEGEncoder();
-
             Tuple<byte[,], byte[,], byte[,]> rgbResult = jpg.getRGBMatrix(path);
             byte[,] RMatrix = rgbResult.Item1;
             byte[,] GMatrix = rgbResult.Item2;
             byte[,] BMatrix = rgbResult.Item3;
-            
+            jpg.printMatriciRGB(RMatrix, GMatrix, BMatrix, RMatrix.GetLength(0), RMatrix.GetLength(1));
             Tuple<float[,], float[,], float[,]> yCbCrResult = jpg.getYCbCrMatrix(RMatrix, GMatrix, BMatrix);
             float[,] YMatrix = yCbCrResult.Item1;
             float[,] CbMatrix = yCbCrResult.Item2;
             float[,] CrMatrix = yCbCrResult.Item3;
-            jpg.printMatriciYCbCr(YMatrix, CbMatrix, CrMatrix,YMatrix.GetLength(0), YMatrix.GetLength(1));
-            //tipo di subsampling applicato
-            int subsamplingType = 0;
-            Tuple<float[,], float[,]> chromaResult = jpg.get420Subsampling(CbMatrix, CrMatrix, subsamplingType);
+            jpg.printMatriciYCbCr(YMatrix, CbMatrix, CrMatrix,YMatrix.GetLength(0),YMatrix.GetLength(1));
+            //sunsampling 420 o 422 
+            Tuple<float[,], float[,]> chromaResult = jpg.get422Subsampling(CbMatrix, CrMatrix, subsamplingType);
             float[,] CbMatrixSub = chromaResult.Item1;
             float[,] CrMatrixSub = chromaResult.Item2;
             Console.WriteLine("SUBSAMPLING Cb");
-            jpg.printMatrice(CbMatrixSub, 32, 32);
+            jpg.printMatrice(CbMatrixSub, CbMatrixSub.GetLength(0), CbMatrixSub.GetLength(1));
             Console.WriteLine("SUBSAMPLING Cr");
-            jpg.printMatrice(CrMatrixSub, 32, 32);
-
+            jpg.printMatrice(CrMatrixSub, CrMatrixSub.GetLength(0), CrMatrixSub.GetLength(1));
+            //classe per fare debug 
+            JPEGDebugger debug = new JPEGDebugger();
+            Boolean subsamplingOk = debug.Subsampling422Debugger(CbMatrixSub, CrMatrixSub, CbMatrix, CrMatrix, subsamplingType);
+            Console.WriteLine("chroma sub tipo " + subsamplingType + " ok? " + subsamplingOk);
             /*
             //Test DCT2D on single block
             double[,] CbMatrixTest8x8 = new double[8,8];

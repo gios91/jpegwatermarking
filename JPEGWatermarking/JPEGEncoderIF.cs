@@ -14,7 +14,9 @@ namespace JPEGEncoding
 
         Tuple<byte[,], byte[,], byte[,]> getRGBFromYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix);
 
-        Tuple<float[,], float[,]> get420Subsampling(float[,] Cb, float[,] Cr, int type);
+        Tuple<float[,], float[,]> get420Subsampling(float[,] Cb, float[,] Cr, int paddingType);
+
+        Tuple<float[,], float[,]> get422Subsampling(float[,] Cb, float[,] Cr, int paddingType);
 
         void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height);
 

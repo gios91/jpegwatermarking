@@ -80,7 +80,6 @@ namespace JPEGEncoding
             for (int i = 0; i < xPx; i++)
                 for (int j = 0; j < yPx; j++)
                 {
-                   // RGB rgb = new RGB(RMatrix[i, j], GMatrix[i, j], BMatrix[i, j]);
                     RGB rgb = YCbCrToRGB(new YCbCr(YMatrix[i,j], CbMatrix[i, j], CrMatrix[i, j]));
                     RMatrix[i, j] = rgb.R;
                     GMatrix[i, j] = rgb.G;
@@ -112,7 +111,29 @@ namespace JPEGEncoding
             return Tuple.Create(CbSub, CrSub);
         }
 
-
+        public Tuple<float[,], float[,]> get422Subsampling(float[,] Cb, float[,] Cr, int type)
+        {
+            //SI ASSUME PER ORA CHE LE MATRICI YCC ABBIANO DIMENSIONE MULTIPLA DI 16 px
+            int rows = Cb.GetLength(0);
+            int columns = Cb.GetLength(1);
+            float[,] CbSub = new float[rows, columns];
+            float[,] CrSub = new float[rows, columns];
+            for (int i = 0; i < rows; i += 16)
+                for (int j = 0; j < columns; j += 16)
+                {
+                    Tuple<float[,], float[,]> result = get422SubsamplingBlock(Cb, Cr, i, j, type);
+                    float[,] CbBlock = result.Item1;
+                    float[,] CrBlock = result.Item2;
+                    for (int k = 0; k < 16; k++)
+                        for (int w = 0; w < 16; w++)
+                        {
+                            CbSub[k + i, w + j] = CbBlock[k, w];
+                            CrSub[k + i, w + j] = CrBlock[k, w];
+                        }
+                }
+            return Tuple.Create(CbSub, CrSub);
+        }
+        
         public Tuple<float[,], float[,]> get420SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w, int type)
         {
             //k = indice di riga da cui parte il blocco, w=indice di colonna
@@ -129,11 +150,13 @@ namespace JPEGEncoding
                         CrSub[i, j] = 0;
                     }
                 for (int i = 0; i < 8; i++)
+                {
                     for (int j = 0; j < 8; j++)
                     {
                         CbSub[i, j] = (Cb[k + 2 * i, w + 2 * j] + Cb[k + 2 * i, w + 2 * j + 1] + Cb[k + 2 * i + 1, w + 2 * j] + Cb[k + 2 * i + 1, w + 2 * j + 1]) / 4;
                         CrSub[i, j] = (Cr[k + 2 * i, w + 2 * j] + Cr[k + 2 * i, w + 2 * j + 1] + Cr[k + 2 * i + 1, w + 2 * j] + Cr[k + 2 * i + 1, w + 2 * j + 1]) / 4;
                     }
+                }
             }
             else if (type == 1)
             {
@@ -150,6 +173,44 @@ namespace JPEGEncoding
                         CrSub[i, j + 8] = CrVal;
                         CrSub[i + 8, j] = CrVal;
                         CrSub[i + 8, j + 8] = CrVal;
+                    }
+            }
+            return Tuple.Create(CbSub, CrSub);
+        }
+
+        public Tuple<float[,], float[,]> get422SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w, int type)
+        {
+            //k = indice di riga da cui parte il blocco, w=indice di colonna
+            //type = { 0 : padding di 0 su blocchi adiacenti; 1 : padding con copia del blocco compresso sui blocchi adiacenti }
+            float[,] CbSub = new float[16, 16];
+            float[,] CrSub = new float[16, 16];
+            if (type == 0)
+            {
+                //padding sui blocchi adiacenti basato sul valore di type
+                for (int i = 0; i < 16; i++)
+                    for (int j = 0; j < 16; j++)
+                    {
+                        CbSub[i, j] = 0;
+                        CrSub[i, j] = 0;
+                    }
+                for (int i = 0; i < 16; i++)
+                    for (int j = 0; j < 8; j++)
+                    {
+                        CbSub[i, j] = (Cb[k + i, w + 2 * j] + Cb[k + i, w + 2 * j + 1]) / 2;
+                        CrSub[i, j] = (Cr[k + i, w + 2 * j] + Cr[k + i, w + 2 * j + 1]) / 2;
+                    }
+            }
+            else if (type == 1)
+            {
+                for (int i = 0; i < 16; i++)
+                    for (int j = 0; j < 8; j++)
+                    {
+                        float CbVal = (Cb[k + i, w + 2 * j] + Cb[k + i, w + 2 * j + 1]) / 2;
+                        float CrVal = (Cr[k + i, w + 2 * j] + Cr[k + i, w + 2 * j + 1]) / 2;
+                        CbSub[i, j] = CbVal;
+                        CbSub[i, j + 8] = CbVal;
+                        CrSub[i, j] = CrVal;
+                        CrSub[i, j + 8] = CrVal;
                     }
             }
             return Tuple.Create(CbSub, CrSub);
@@ -200,7 +261,7 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < height; j++)
                 {
-                    Console.Write(RMatrix[i, j] + " ");
+                    debugBlockPrint(RMatrix[i, j]);
                 }
                 Console.WriteLine();
             }
@@ -209,7 +270,7 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < height; j++)
                 {
-                    Console.Write(GMatrix[i, j] + " ");
+                    debugBlockPrint(GMatrix[i, j]);
                 }
                 Console.WriteLine();
             }
@@ -218,7 +279,7 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < height; j++)
                 {
-                    Console.Write(BMatrix[i, j] + " ");
+                    debugBlockPrint(BMatrix[i, j]);
                 }
                 Console.WriteLine();
             }
@@ -231,8 +292,9 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < height; j++)
                 {
-                    Console.Write(YMatrix[i, j] + " ");
+                    debugBlockPrint(YMatrix[i, j]);
                 }
+                Console.Write(" " + (i));
                 Console.WriteLine();
             }
             Console.WriteLine("Cb Matrix");
@@ -240,8 +302,9 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < height; j++)
                 {
-                    Console.Write(CbMatrix[i, j] + " ");
+                    debugBlockPrint(CbMatrix[i, j]);
                 }
+                Console.Write(" " + (i));
                 Console.WriteLine();
             }
             Console.WriteLine("Cr Matrix");
@@ -249,8 +312,9 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < height; j++)
                 {
-                    Console.Write(CrMatrix[i, j] + " ");
+                    debugBlockPrint(CrMatrix[i, j]);
                 }
+                Console.Write(" " + (i));
                 Console.WriteLine();
             }
         }
@@ -261,7 +325,7 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < column; j++)
                 {
-                    Console.Write(M[i, j] + " ");
+                    debugBlockPrint(M[i, j]);
                 }
                 Console.WriteLine();
             }
@@ -273,7 +337,7 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < column; j++)
                 {
-                    Console.Write(M[i, j] + " ");
+                    debugBlockPrint(M[i, j]);
                 }
                 Console.WriteLine();
             }
@@ -288,7 +352,7 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < y; j++)
                 {
-                    Console.Write(CbSub[i, j] + " ");
+                    debugBlockPrint(CbSub[i, j]);
                 }
                 Console.WriteLine();
             }
@@ -297,12 +361,23 @@ namespace JPEGEncoding
             {
                 for (int j = 0; j < y; j++)
                 {
-                    Console.Write(CrSub[i, j] + " ");
+                    debugBlockPrint(CrSub[i, j]);
                 }
                 Console.WriteLine();
             }
         }
-    }//RGBTest
+
+        private void debugBlockPrint(double x)
+        {
+            Console.Write(x.ToString("0.0") + " ");
+        }
+
+        private void debugBlockPrint(float x)
+        {
+            Console.Write(x.ToString("0.0") + " ");
+        }
+
+    }//RGBEncoder
 
 
     public struct RGB
