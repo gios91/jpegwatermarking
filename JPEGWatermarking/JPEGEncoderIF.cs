@@ -18,6 +18,8 @@ namespace JPEGEncoding
 
         Tuple<float[,], float[,]> get422Subsampling(float[,] Cb, float[,] Cr, int paddingType);
 
+        Tuple<double[,], double[,], double[,]> getDCTMatrices(double[,] Y, double[,] Cb, double[,] Cr, int subsamplingType, int paddingType);
+
         void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height);
 
         void printMatriciYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix, int width, int height);

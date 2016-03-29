@@ -5,11 +5,29 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 using System.Drawing;
+using DCTLib;
 
 namespace JPEGEncoding
 {
     class JPEGEncoder : JPEGEncoderIF
     {
+
+        public static int NO_SUBSAMPLING = 0;
+        public static int SUBSAMPLING_422 = 1;
+        public static int SUBSAMPLING_420 = 2;
+
+        public static int ZERO_BLOCK_PADDING = 0;
+        public static int COPY_BLOCK_PADDING = 1;
+        
+        private DCT dct;
+        
+
+
+        public JPEGEncoder()
+        {
+            dct = new DCT(8, 8);
+        }
+        
         public Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(string pathFile)
         {
             Bitmap b = new Bitmap(pathFile);
@@ -134,13 +152,13 @@ namespace JPEGEncoding
             return Tuple.Create(CbSub, CrSub);
         }
         
-        public Tuple<float[,], float[,]> get420SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w, int type)
+        public Tuple<float[,], float[,]> get420SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w, int  paddingType)
         {
             //k = indice di riga da cui parte il blocco, w=indice di colonna
             //type = { 0 : padding di 0 su blocchi adiacenti; 1 : padding con copia del blocco compresso sui blocchi adiacenti }
             float[,] CbSub = new float[16, 16];
             float[,] CrSub = new float[16, 16];
-            if (type == 0)
+            if (paddingType == ZERO_BLOCK_PADDING)
             {
                 //padding sui blocchi adiacenti basato sul valore di type
                 for (int i = 0; i < 16; i++)
@@ -158,7 +176,7 @@ namespace JPEGEncoding
                     }
                 }
             }
-            else if (type == 1)
+            else if (paddingType == COPY_BLOCK_PADDING)
             {
                 for (int i = 0; i < 8; i++)
                     for (int j = 0; j < 8; j++)
@@ -178,13 +196,13 @@ namespace JPEGEncoding
             return Tuple.Create(CbSub, CrSub);
         }
 
-        public Tuple<float[,], float[,]> get422SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w, int type)
+        public Tuple<float[,], float[,]> get422SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w, int paddingType)
         {
             //k = indice di riga da cui parte il blocco, w=indice di colonna
             //type = { 0 : padding di 0 su blocchi adiacenti; 1 : padding con copia del blocco compresso sui blocchi adiacenti }
             float[,] CbSub = new float[16, 16];
             float[,] CrSub = new float[16, 16];
-            if (type == 0)
+            if (paddingType == ZERO_BLOCK_PADDING)
             {
                 //padding sui blocchi adiacenti basato sul valore di type
                 for (int i = 0; i < 16; i++)
@@ -200,7 +218,7 @@ namespace JPEGEncoding
                         CrSub[i, j] = (Cr[k + i, w + 2 * j] + Cr[k + i, w + 2 * j + 1]) / 2;
                     }
             }
-            else if (type == 1)
+            else if (paddingType == COPY_BLOCK_PADDING)
             {
                 for (int i = 0; i < 16; i++)
                     for (int j = 0; j < 8; j++)
@@ -214,6 +232,151 @@ namespace JPEGEncoding
                     }
             }
             return Tuple.Create(CbSub, CrSub);
+        }
+
+        public Tuple<double[,], double[,], double[,]> getDCTMatrices(double[,] Y, double[,] Cb, double[,] Cr, int subsamplingType, int paddingType)
+        {
+            int rows = Y.GetLength(0);
+            int columns = Y.GetLength(1);
+            double[,] Ydct = new double[rows, columns];
+            double[,] Cbdct = new double[rows, columns];
+            double[,] Crdct = new double[rows, columns];
+            if (subsamplingType == NO_SUBSAMPLING)
+            {
+                //DCT su tutti i blocchi YCC
+                for (int i = 0; i < rows; i += 8)
+                    for (int j = 0; j < columns; j += 8)
+                    {
+                        double[,] Yblock = copyBlock(Y, i, j);
+                        double[,] Cbblock = copyBlock(Cb, i, j);
+                        double[,] Crblock = copyBlock(Cr, i, j);
+                        double[,] YblockResult = dct.DCT2D(Yblock);
+                        double[,] CbblockResult = dct.DCT2D(Cbblock);
+                        double[,] CrblockResult = dct.DCT2D(Crblock);
+                        insertBlock(Ydct, YblockResult, i, j);
+                        insertBlock(Cbdct, CbblockResult, i, j);
+                        insertBlock(Crdct, CrblockResult, i, j);
+                    }
+            }
+            else if(subsamplingType == SUBSAMPLING_422)
+            {
+                Boolean calcolaCbCr = true;
+                for (int i = 0; i < rows; i += 8)
+                    for (int j = 0; j < columns; j += 8)
+                    {
+                        double[,] Yblock = copyBlock(Y, i, j);
+                        double[,] YblockResult = dct.DCT2D(Yblock);
+                        insertBlock(Ydct, YblockResult, i, j);
+                        if (calcolaCbCr)
+                        {
+                            double[,] Cbblock = copyBlock(Cb, i, j);
+                            double[,] Crblock = copyBlock(Cr, i, j);
+                            double[,] CbblockResult = dct.DCT2D(Cbblock);
+                            double[,] CrblockResult = dct.DCT2D(Crblock);
+                            insertBlock(Cbdct, CbblockResult, i, j);
+                            insertBlock(Crdct, CbblockResult, i, j);
+                            calcolaCbCr = false;
+                        }
+                        else
+                        {
+                            if (paddingType == ZERO_BLOCK_PADDING)
+                            {
+                                zeroBlock(Cbdct, i, j);
+                                zeroBlock(Crdct, i, j);
+                            }
+                            else if (paddingType == COPY_BLOCK_PADDING)
+                            {
+                                insertBlock(Cbdct, copyBlock(Cbdct, i, j-8), i, j);
+                                insertBlock(Crdct, copyBlock(Crdct, i, j-8), i, j);
+                            }
+                            calcolaCbCr = true;
+                        }
+                    }
+            }
+            else if (subsamplingType == SUBSAMPLING_420)
+            {
+                Boolean calcolaRowCbCr = true, calcolaColCbCr = true;
+                for (int i = 0; i < rows; i += 8)
+                {
+                    for (int j = 0; j < columns; j += 8)
+                    {
+                        double[,] Yblock = copyBlock(Y, i, j);
+                        double[,] YblockResult = dct.DCT2D(Yblock);
+                        insertBlock(Ydct, YblockResult, i, j);
+                        if (calcolaRowCbCr && calcolaColCbCr)
+                        {
+                            double[,] Cbblock = copyBlock(Cb, i, j);
+                            double[,] Crblock = copyBlock(Cr, i, j);
+                            double[,] CbblockResult = dct.DCT2D(Cbblock);
+                            double[,] CrblockResult = dct.DCT2D(Crblock);
+                            insertBlock(Cbdct, CbblockResult, i, j);
+                            insertBlock(Crdct, CbblockResult, i, j);
+                            calcolaColCbCr = false;
+                        }
+                        else
+                        {
+                            if (paddingType == ZERO_BLOCK_PADDING)
+                            {
+                                zeroBlock(Cbdct, i, j);
+                                zeroBlock(Crdct, i, j);
+                            }
+                            else if (paddingType == COPY_BLOCK_PADDING)
+                            {
+                                if (calcolaRowCbCr)
+                                {
+                                    insertBlock(Cbdct, copyBlock(Cbdct, i, j - 8), i, j);
+                                    insertBlock(Crdct, copyBlock(Crdct, i, j - 8), i, j);
+                                }
+                                else
+                                {
+                                    insertBlock(Cbdct, copyBlock(Cbdct, i - 8, j), i, j);
+                                    insertBlock(Crdct, copyBlock(Crdct, i - 8, j), i, j);
+                                }
+                            }
+                            calcolaColCbCr = true;
+                        }
+                    }
+                    if(calcolaRowCbCr)
+                    {
+                        calcolaRowCbCr = false;
+                    }
+                    else
+                    {
+                        calcolaRowCbCr = true;
+                    }
+                    //controllare che a fine riga calcolaColCbCr è sempre true
+                }
+            }
+            return Tuple.Create(Ydct, Cbdct, Crdct);
+        }
+
+        private double[,] copyBlock(double[,] M, int k, int w)
+        {
+            double[,] copyBlock = new double[8, 8];
+            for (int i=0; i<8; i++)
+                for(int j=0; j<8; j++)
+                {
+                    copyBlock[i, j] = M[i + k, j + w];
+                }
+            return copyBlock;
+        }
+
+        private void insertBlock(double[,] result, double[,] block, int k, int w)
+        {
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                {
+                    result[i + k, j + w] = block[i, j];
+                }
+        }
+
+        private void zeroBlock(double[,] result, int k, int w)
+        {
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                {
+                    result[i + k, j + w] = 0;
+                }
         }
 
         /*
@@ -369,12 +532,12 @@ namespace JPEGEncoding
 
         private void debugBlockPrint(double x)
         {
-            Console.Write(x.ToString("0.0") + " ");
+            Console.Write(x.ToString("0.00") + " ");
         }
 
         private void debugBlockPrint(float x)
         {
-            Console.Write(x.ToString("0.0") + " ");
+            Console.Write(x.ToString("0.00") + " ");
         }
 
     }//RGBEncoder

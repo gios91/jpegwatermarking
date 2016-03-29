@@ -107,9 +107,7 @@ namespace DCTLib
                 {
                     //...sum the basisfunction for every [x,y] value in the bitmap input
                     double sum = 0d;
-
-
-
+                    
                     for (int x = 0; x < Width; x++)
                     {
                         for (int y = 0; y < Height; y++)
@@ -173,6 +171,5 @@ namespace DCTLib
         {
             get { return (1d/Width + 1d/Height); }
         }
-
     }
 }

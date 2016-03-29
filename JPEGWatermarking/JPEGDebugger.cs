@@ -8,6 +8,9 @@ namespace JPEGEncoding
 {
     class JPEGDebugger
     {
+        JPEGEncoderIF jpg = new JPEGEncoder();
+
+
         public Boolean Subsampling420Debugger(float[,] CbSub, float[,] CrSub, float[,] Cb, float[,] Cr, int subsamplingType)
         {
             //SI ASSUME PER ORA CHE LE MATRICI YCC ABBIANO DIMENSIONE MULTIPLA DI 16 px
@@ -121,5 +124,34 @@ namespace JPEGEncoding
             }
             return true;
         }
+
+        public void DCTDebbugging(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix, int subsamplingType, int paddingType)
+        {
+            int rows = YMatrix.GetLength(0);
+            int columns = YMatrix.GetLength(1);
+            //DCT TEST
+            double[,] YDMatrix = new double[rows, columns];
+            double[,] CbDMatrix = new double[rows, columns];
+            double[,] CrDMatrix = new double[rows, columns];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                {
+                    YDMatrix[i, j] = (double)YMatrix[i, j];
+                    CbDMatrix[i, j] = (double)CbMatrix[i, j];
+                    CrDMatrix[i, j] = (double)CrMatrix[i, j];
+                }
+            Tuple<double[,], double[,], double[,]> DCTResult = jpg.getDCTMatrices(YDMatrix, CbDMatrix, CrDMatrix,
+                subsamplingType, paddingType);
+            double[,] YDCTMatrix = DCTResult.Item1;
+            double[,] CbDCTMatrix = DCTResult.Item2;
+            double[,] CrDCTMatrix = DCTResult.Item3;
+            Console.WriteLine("DCT Y");
+            jpg.printMatrice(YDCTMatrix, rows, columns);
+            Console.WriteLine("DCT Cb");
+            jpg.printMatrice(CbDCTMatrix, rows, columns);
+            Console.WriteLine("DCT Cr");
+            jpg.printMatrice(CrDCTMatrix, rows, columns);
+        }
+        
     }
 }
