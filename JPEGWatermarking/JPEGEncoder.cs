@@ -12,6 +12,44 @@ namespace JPEGEncoding
     class JPEGEncoder : JPEGEncoderIF
     {
 
+       static double[,] QuantizationYMatrix =
+       {
+            { 16, 11, 10, 16, 24, 40, 51, 61 },
+            { 12, 12, 14, 19, 26, 58, 60, 55 },
+            { 14, 13, 16, 24, 40, 57, 69, 56 },
+            { 14, 17, 22, 29, 51, 87, 80, 62 },
+            { 18, 22, 37, 56, 68, 109, 103, 77 },
+            { 24, 35, 55, 64, 81, 104, 113, 92 },
+            { 49, 64, 78, 87, 103, 121, 120, 101 },
+            { 72, 92, 95, 98, 112, 100, 103, 99 }
+
+        };
+
+        static double[,] QuantizationCMatrix =
+        {
+            { 17, 18, 24, 47, 99, 99, 99, 99 },
+            { 18, 21, 26, 66, 99, 99, 99, 99 },
+            { 24, 26, 56, 99, 99, 99, 99, 99 },
+            { 47, 66, 99, 99, 99, 99, 99, 99 },
+            { 99, 99, 99, 99, 99, 99, 99, 99 },
+            { 99, 99, 99, 99, 99, 99, 99, 99 },
+            { 99, 99, 99, 99, 99, 99, 99, 99 },
+            { 99, 99, 99, 99, 99, 99, 99, 99 }
+
+        };
+
+        static int[,] ZigZag =
+        {
+            { 0, 1, 5, 6, 14, 15, 27, 28 },
+            { 2, 4, 7, 13, 16, 26, 29, 42 },
+            { 3, 8, 12, 17, 25, 30, 41, 43 },
+            { 9, 11, 18, 24, 31, 40, 44, 53 },
+            { 10, 19, 23, 32, 39, 45, 52, 54 },
+            { 20, 22, 33, 38, 46, 51, 55, 60 },
+            { 21, 34, 37, 47, 50, 56, 59, 61 },
+            { 35, 36, 48, 49, 57, 58, 62, 63 }
+        };
+
         public static int NO_SUBSAMPLING = 0;
         public static int SUBSAMPLING_422 = 1;
         public static int SUBSAMPLING_420 = 2;
@@ -21,8 +59,7 @@ namespace JPEGEncoding
         
         private DCT dct;
         
-
-
+        
         public JPEGEncoder()
         {
             dct = new DCT(8, 8);
@@ -379,6 +416,68 @@ namespace JPEGEncoding
                 }
         }
 
+        public Tuple<double[,], double[,], double[,]> getQuantizedMatrices(double[,] Ydct, double[,] Cbdct, double[,] Crdct)
+        {
+            int rows = Ydct.GetLength(0);
+            int columns = Ydct.GetLength(1);
+            for (int i=0; i<rows; i+=8) 
+                for (int j=0; j<columns; j+=8)
+                {
+                    blockQuantization(Ydct,Cbdct, Crdct, i,j);
+                }
+            return Tuple.Create(Ydct, Cbdct, Crdct);
+        }
+        
+        private void debugBlockPrint(float x)
+        {
+            Console.Write(x.ToString("0.0000") + " ");
+        }
+
+        public Tuple<double[,],double[,],double[,]> getACEncoding(double[,] YMatrixQ, double[,] CbMatrixQ, double[,] CrMatrixQ)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Tuple<double[], double[], double[]> getDCEncoding(double[,] YMatrixQ, double[,] CbMatrixQ, double[,] CrMatrixQ)
+        {
+            int rows = YMatrixQ.GetLength(0);
+            int columns = YMatrixQ.GetLength(1);
+            int blockNumber = (rows / 8) * (columns / 8);
+            double[] YDCEnc = new double[blockNumber];
+            double[] CbDCEnc = new double[blockNumber];
+            double[] CrDCEnc = new double[blockNumber];
+            double precYDC = YMatrixQ[0, 0];
+            double precCbDC = CbMatrixQ[0, 0];
+            double precCrDC = CrMatrixQ[0, 0];
+            YDCEnc[0] = precYDC;
+            CbDCEnc[0] = precCbDC;
+            CrDCEnc[0] = precCrDC;
+            int cntBlock = 1;
+            for (int i=0; i<rows; i+=8)
+                for (int j=8; j<columns; j+=8)
+                {
+                    YDCEnc[cntBlock] = (YMatrixQ[i, j] - precYDC);
+                    precYDC = YMatrixQ[i, j];
+                    CbDCEnc[cntBlock] = (CbMatrixQ[i, j] - precCbDC);
+                    precCbDC = CbMatrixQ[i, j];
+                    CrDCEnc[cntBlock] = (CrMatrixQ[i, j] - precCrDC);
+                    precCrDC = CrMatrixQ[i, j];
+                    cntBlock++;
+                }
+            return Tuple.Create(YDCEnc, CbDCEnc, CrDCEnc);
+        }
+
+        private void blockQuantization(double[,] Ydct,  double[,] Cbdct, double[,] Crdct, int k, int w)
+        {
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                {
+                    Ydct[i + k, j + w] /= JPEGEncoder.QuantizationYMatrix[i, j];
+                    Cbdct[i + k, j + w] /= JPEGEncoder.QuantizationCMatrix[i, j];
+                    Crdct[i + k, j + w] /= JPEGEncoder.QuantizationCMatrix[i, j];
+                }
+        }
+
         /*
         public Tuple<float[,], float[,]> get420SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w)
         {
@@ -532,14 +631,8 @@ namespace JPEGEncoding
 
         private void debugBlockPrint(double x)
         {
-            Console.Write(x.ToString("0.00") + " ");
+            Console.Write(x.ToString("0.0000") + " ");
         }
-
-        private void debugBlockPrint(float x)
-        {
-            Console.Write(x.ToString("0.00") + " ");
-        }
-
     }//RGBEncoder
 
 

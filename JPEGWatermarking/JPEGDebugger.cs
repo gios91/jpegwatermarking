@@ -10,7 +10,6 @@ namespace JPEGEncoding
     {
         JPEGEncoderIF jpg = new JPEGEncoder();
 
-
         public Boolean Subsampling420Debugger(float[,] CbSub, float[,] CrSub, float[,] Cb, float[,] Cr, int subsamplingType)
         {
             //SI ASSUME PER ORA CHE LE MATRICI YCC ABBIANO DIMENSIONE MULTIPLA DI 16 px
@@ -151,7 +150,21 @@ namespace JPEGEncoding
             jpg.printMatrice(CbDCTMatrix, rows, columns);
             Console.WriteLine("DCT Cr");
             jpg.printMatrice(CrDCTMatrix, rows, columns);
+            //QUANTIZZAZIONE
+            Tuple<double[,], double[,], double[,]> QuantizationResult = jpg.getQuantizedMatrices(YDCTMatrix,CbDCTMatrix,CrDCTMatrix);
+            double[,] YQMatrix = QuantizationResult.Item1;
+            double[,] CbQMatrix = QuantizationResult.Item2;
+            double[,] CrQMatrix = QuantizationResult.Item3;
+            Console.WriteLine("QUANTIZED Y");
+            jpg.printMatrice(YDCTMatrix, rows, columns);
+            Console.WriteLine("QUANTIZED Cb");
+            jpg.printMatrice(CbDCTMatrix, rows, columns);
+            Console.WriteLine("QUANTIZED Cr");
+            jpg.printMatrice(CrDCTMatrix, rows, columns);
+            //DC ENCODING
+            Console.WriteLine("DC coefficient for Y");
+
+
         }
-        
     }
 }

@@ -20,6 +20,12 @@ namespace JPEGEncoding
 
         Tuple<double[,], double[,], double[,]> getDCTMatrices(double[,] Y, double[,] Cb, double[,] Cr, int subsamplingType, int paddingType);
 
+        Tuple<double[,], double[,], double[,]> getQuantizedMatrices(double[,] Ydct, double[,] Cbdct, double[,] Crdct);
+
+        Tuple<double[,],double[,],double[,]> getACEncoding(double[,] YMatrixQ, double[,] CbMatrixQ, double[,] CrMatrixQ);
+
+        Tuple<double[], double[], double[]> getDCEncoding(double[,] YMatrixQ, double[,] CbMatrixQ, double[,] CrMatrixQ);
+
         void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height);
 
         void printMatriciYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix, int width, int height);
