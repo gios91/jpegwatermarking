@@ -22,15 +22,19 @@ namespace JPEGEncoding
 
         Tuple<double[,], double[,], double[,]> getQuantizedMatrices(double[,] Ydct, double[,] Cbdct, double[,] Crdct);
 
-        Tuple<double[,],double[,],double[,]> getACEncoding(double[,] YMatrixQ, double[,] CbMatrixQ, double[,] CrMatrixQ);
+        Tuple<int[,], int[,], int[,]> getRoundToIntMatrices(double[,] YQ, double[,] CbQ, double[,] CrQ);
 
-        Tuple<double[], double[], double[]> getDCEncoding(double[,] YMatrixQ, double[,] CbMatrixQ, double[,] CrMatrixQ);
+        Tuple<LinkedList<int[]>, LinkedList<int[]>, LinkedList<int[]>> getACEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ);
+
+        Tuple<int[],int[], int[]> getDCEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ);
 
         void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height);
 
         void printMatriciYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix, int width, int height);
 
         void printMatrice(float[,] M, int row, int column);
+
+        void printMatrice(int[,] M, int row, int column);
 
         void printMatrice(double[,] M, int row, int column);
 

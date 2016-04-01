@@ -145,26 +145,64 @@ namespace JPEGEncoding
             double[,] CbDCTMatrix = DCTResult.Item2;
             double[,] CrDCTMatrix = DCTResult.Item3;
             Console.WriteLine("DCT Y");
-            jpg.printMatrice(YDCTMatrix, rows, columns);
+            //jpg.printMatrice(YDCTMatrix, rows, columns);
             Console.WriteLine("DCT Cb");
-            jpg.printMatrice(CbDCTMatrix, rows, columns);
+            //jpg.printMatrice(CbDCTMatrix, rows, columns);
             Console.WriteLine("DCT Cr");
-            jpg.printMatrice(CrDCTMatrix, rows, columns);
+            //jpg.printMatrice(CrDCTMatrix, rows, columns);
             //QUANTIZZAZIONE
             Tuple<double[,], double[,], double[,]> QuantizationResult = jpg.getQuantizedMatrices(YDCTMatrix,CbDCTMatrix,CrDCTMatrix);
             double[,] YQMatrix = QuantizationResult.Item1;
             double[,] CbQMatrix = QuantizationResult.Item2;
             double[,] CrQMatrix = QuantizationResult.Item3;
             Console.WriteLine("QUANTIZED Y");
-            jpg.printMatrice(YDCTMatrix, rows, columns);
+            //jpg.printMatrice(YDCTMatrix, rows, columns);
             Console.WriteLine("QUANTIZED Cb");
-            jpg.printMatrice(CbDCTMatrix, rows, columns);
+            //jpg.printMatrice(CbDCTMatrix, rows, columns);
             Console.WriteLine("QUANTIZED Cr");
-            jpg.printMatrice(CrDCTMatrix, rows, columns);
-            //DC ENCODING
-            Console.WriteLine("DC coefficient for Y");
-
-
+            //jpg.printMatrice(CrDCTMatrix, rows, columns);
+            //ROUNDING YCbCR Quantized
+            Tuple<int[,], int[,], int[,]> RoundingResult = jpg.getRoundToIntMatrices(YQMatrix, CbQMatrix, CrQMatrix);
+            int[,] YQIntMatrix = RoundingResult.Item1;
+            int[,] CbQIntMatrix = RoundingResult.Item2;
+            int[,] CrQIntMatrix = RoundingResult.Item3;
+            Console.WriteLine("ROUNDED Y");
+            jpg.printMatrice(YQIntMatrix, rows, columns);
+            Console.WriteLine("ROUNDED Cb");
+            jpg.printMatrice(CbQIntMatrix, rows, columns);
+            Console.WriteLine("ROUNDED Cr");
+            jpg.printMatrice(CrQIntMatrix, rows, columns);
+            //AC Encoding
+            Console.WriteLine("+++++++++++ AC Encoding Y ++++++++++++");
+            jpg.getACEncoding(YQIntMatrix, CbQIntMatrix, CrQIntMatrix);
+            /*
+            //DC Encoding
+            Tuple<int[], int[], int[]> DCResult = jpg.getDCEncoding(YQIntMatrix, CbQIntMatrix, CrQIntMatrix);
+            int[] YDC = DCResult.Item1;
+            int[] CbDC = DCResult.Item2;
+            int[] CrDC = DCResult.Item3;
+            Console.WriteLine("+++++++++++ DC Encoding Y ++++++++++++");
+            jpg.printMatrice(YQIntMatrix, rows, columns);
+            Console.WriteLine("RESULT");
+            for (int i = 0; i < YDC.Length; i++)
+                Console.Write(YDC[i] + " ");
+            Console.WriteLine();
+            Console.WriteLine("**************************************");
+            Console.WriteLine("+++++++++++ DC Encoding Cb ++++++++++++");
+            jpg.printMatrice(CbQIntMatrix, rows, columns);
+            Console.WriteLine("RESULT");
+            for (int i = 0; i < YDC.Length; i++)
+                Console.Write(CbDC[i] + " ");
+            Console.WriteLine();
+            Console.WriteLine("**************************************");
+            Console.WriteLine("+++++++++++ DC Encoding Cr ++++++++++++");
+            jpg.printMatrice(CrQIntMatrix, rows, columns);
+            Console.WriteLine("RESULT");
+            for (int i = 0; i < YDC.Length; i++)
+                Console.Write(CrDC[i] + " ");
+            Console.WriteLine();
+            Console.WriteLine("**************************************");
+            */
         }
     }
 }

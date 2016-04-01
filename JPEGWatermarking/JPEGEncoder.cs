@@ -12,7 +12,7 @@ namespace JPEGEncoding
     class JPEGEncoder : JPEGEncoderIF
     {
 
-       static double[,] QuantizationYMatrix =
+       public static double[,] QuantizationYMatrix =
        {
             { 16, 11, 10, 16, 24, 40, 51, 61 },
             { 12, 12, 14, 19, 26, 58, 60, 55 },
@@ -25,7 +25,7 @@ namespace JPEGEncoding
 
         };
 
-        static double[,] QuantizationCMatrix =
+        public static double[,] QuantizationCMatrix =
         {
             { 17, 18, 24, 47, 99, 99, 99, 99 },
             { 18, 21, 26, 66, 99, 99, 99, 99 },
@@ -35,10 +35,9 @@ namespace JPEGEncoding
             { 99, 99, 99, 99, 99, 99, 99, 99 },
             { 99, 99, 99, 99, 99, 99, 99, 99 },
             { 99, 99, 99, 99, 99, 99, 99, 99 }
-
         };
 
-        static int[,] ZigZag =
+        public static int[,] ZigZag =
         {
             { 0, 1, 5, 6, 14, 15, 27, 28 },
             { 2, 4, 7, 13, 16, 26, 29, 42 },
@@ -50,6 +49,16 @@ namespace JPEGEncoding
             { 35, 36, 48, 49, 57, 58, 62, 63 }
         };
 
+        public static int[] ZigZagX =
+        { 0, 1, 2, 1, 0, 0, 1, 2, 3, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 0,
+          0, 1, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 4, 5,
+          6, 7, 7, 6, 5, 6, 7, 7 };
+
+        public static int[] ZigZagY =
+        { 1, 0, 0, 1, 2, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6,
+          7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 2, 3, 4, 5, 6, 7, 7, 6,
+          5, 4, 5, 6, 7, 7, 6, 7 };
+    
         public static int NO_SUBSAMPLING = 0;
         public static int SUBSAMPLING_422 = 1;
         public static int SUBSAMPLING_420 = 2;
@@ -68,17 +77,17 @@ namespace JPEGEncoding
         public Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(string pathFile)
         {
             Bitmap b = new Bitmap(pathFile);
-            int yPx = b.Height;
-            int xPx = b.Width;
+            int yPx = b.Width;
+            int xPx = b.Height;
             byte[,] RMatrix = new byte[xPx, yPx];
             byte[,] GMatrix = new byte[xPx, yPx];
             byte[,] BMatrix = new byte[xPx, yPx];
             for (int i = 0; i < xPx; i++)
                 for (int j = 0; j < yPx; j++)
                 {
-                    RMatrix[i, j] = b.GetPixel(i, j).R;
-                    GMatrix[i, j] = b.GetPixel(i, j).G;
-                    BMatrix[i, j] = b.GetPixel(i, j).B;
+                    RMatrix[i, j] = b.GetPixel(j, i).R;
+                    GMatrix[i, j] = b.GetPixel(j, i).G;
+                    BMatrix[i, j] = b.GetPixel(j, i).B;
                 }
 
             //printMatriciRGB(RMatrix, GMatrix, BMatrix, xPx, yPx);
@@ -427,35 +436,64 @@ namespace JPEGEncoding
                 }
             return Tuple.Create(Ydct, Cbdct, Crdct);
         }
+
+        public Tuple<int[,], int[,], int[,]> getRoundToIntMatrices(double[,] YQ, double[,] CbQ, double[,] CrQ)
+        {
+            int rows = YQ.GetLength(0);
+            int columns = YQ.GetLength(1);
+            int[,] YQRound = new int[rows, columns];
+            int[,] CbQRound = new int[rows, columns];
+            int[,] CrQRound = new int[rows, columns];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                {
+                    YQRound[i, j] = Convert.ToInt32(Math.Round(YQ[i, j]));
+                    CbQRound[i, j] = Convert.ToInt32(Math.Round(CbQ[i, j]));
+                    CrQRound[i, j] = Convert.ToInt32(Math.Round(CrQ[i, j]));
+                }
+            return Tuple.Create(YQRound, CbQRound, CrQRound);
+        }
         
-        private void debugBlockPrint(float x)
+        public Tuple<LinkedList<int[]>, LinkedList<int[]>, LinkedList<int[]>> getACEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ)
         {
-            Console.Write(x.ToString("0.0000") + " ");
+            int rows = YMatrixQ.GetLength(0);
+            int columns = YMatrixQ.GetLength(1);
+            LinkedList<int[]> YACEncoding = new LinkedList<int[]>();
+            LinkedList<int[]> CbACEncoding = new LinkedList<int[]>();
+            LinkedList<int[]> CrACEncoding = new LinkedList<int[]>();
+            for (int i = 0; i < rows; i += 8)
+                for (int j = 0; j < columns; j += 8)
+                {
+                    Console.WriteLine("BLOCK");
+                    printBlock(YMatrixQ, i, j);
+                    Console.WriteLine("*******************");
+                    YACEncoding.AddLast(getACFromBlock(YMatrixQ, i, j));
+                    //CbACEncoding.AddLast(getACFromBlock(CbMatrixQ, i, j));
+                    //CrACEncoding.AddLast(getACFromBlock(CrMatrixQ, i, j));
+                }
+            return Tuple.Create(YACEncoding, CbACEncoding, CrACEncoding);
         }
 
-        public Tuple<double[,],double[,],double[,]> getACEncoding(double[,] YMatrixQ, double[,] CbMatrixQ, double[,] CrMatrixQ)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Tuple<double[], double[], double[]> getDCEncoding(double[,] YMatrixQ, double[,] CbMatrixQ, double[,] CrMatrixQ)
+        public Tuple<int[], int[], int[]> getDCEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ)
         {
             int rows = YMatrixQ.GetLength(0);
             int columns = YMatrixQ.GetLength(1);
             int blockNumber = (rows / 8) * (columns / 8);
-            double[] YDCEnc = new double[blockNumber];
-            double[] CbDCEnc = new double[blockNumber];
-            double[] CrDCEnc = new double[blockNumber];
-            double precYDC = YMatrixQ[0, 0];
-            double precCbDC = CbMatrixQ[0, 0];
-            double precCrDC = CrMatrixQ[0, 0];
+            int[] YDCEnc = new int[blockNumber];
+            int[] CbDCEnc = new int[blockNumber];
+            int[] CrDCEnc = new int[blockNumber];
+            int precYDC = YMatrixQ[0, 0];
+            int precCbDC = CbMatrixQ[0, 0];
+            int precCrDC = CrMatrixQ[0, 0];
             YDCEnc[0] = precYDC;
             CbDCEnc[0] = precCbDC;
             CrDCEnc[0] = precCrDC;
             int cntBlock = 1;
             for (int i=0; i<rows; i+=8)
-                for (int j=8; j<columns; j+=8)
+                for (int j=0; j<columns; j+=8)
                 {
+                    if (i == 0 && j == 0)
+                        continue;
                     YDCEnc[cntBlock] = (YMatrixQ[i, j] - precYDC);
                     precYDC = YMatrixQ[i, j];
                     CbDCEnc[cntBlock] = (CbMatrixQ[i, j] - precCbDC);
@@ -477,7 +515,105 @@ namespace JPEGEncoding
                     Crdct[i + k, j + w] /= JPEGEncoder.QuantizationCMatrix[i, j];
                 }
         }
+        /*
+        private int[] getACFromBlock(int[,] Matrix, int k, int w)
+        {
+            /*
+            si inseriscono nell'array AC valori diversi da zero; quando si incontra uno zero, si inserisce zero con
+            di seguito la count degli zero consecutivi; All'uscita dal blocco si inserisce 00
+            ( es. [ 2, 3, 0, 4 -> 4 zeri consecutivi, 5, 7, ..., 0, 0 -> fine blocco]. )
+            
+            LinkedList<int> encoding = new LinkedList<int>();
+            int dimArray = ZigZagX.GetLength(0);
+            Boolean counting = false;
+            int numZeroCounter = 0;
+            for (int i=0; i<dimArray; i++)
+            {
+                int current = Matrix[ZigZagX[i] + k, ZigZagY[i] + w];
+                if (current != 0 && !counting)
+                {// valore diverso da zero, fuori da una sequenza di zeri
+                    encoding.AddLast(current);
+                }
+                else if (current == 0 && !counting)
+                {
+                    counting = true;
+                    numZeroCounter++;
+                }
+                else if (current == 0 && counting)
+                {
+                    numZeroCounter++;
+                }
+                else if (current != 0 && counting)
+                {
+                    encoding.AddLast(0);
+                    encoding.AddLast(numZeroCounter);
+                    encoding.AddLast(current);
+                    numZeroCounter = 0;
+                    counting = false;
+                }
+                if (i+1 == dimArray)
+                {
+                    encoding.AddLast(0);
+                    encoding.AddLast(0);
+                }
+            }
+            int[] result = encoding.ToArray();
+            //DEBUG
+            Console.WriteLine("RESULT");
+            for (int i = 0; i < encoding.Count; i++)
+                Console.Write(result[i] + " ");
+            Console.WriteLine();
+            Console.WriteLine("**************************************");
+            return result;
+        }
+        */
 
+        private int[] getACFromBlock(int[,] Matrix, int k, int w)
+        {
+            LinkedList<int> encoding = new LinkedList<int>();
+            int dimArray = ZigZagX.GetLength(0);
+            Boolean counting = false;
+            int numZeroCounter = 0;
+            for (int i=0; i<dimArray; i++)
+            {
+                int current = Matrix[ZigZagX[i] + k, ZigZagY[i] + w];
+                if (current != 0 && !counting)
+                {// valore diverso da zero, fuori da una sequenza di zeri
+                    encoding.AddLast(0);
+                    encoding.AddLast(current);
+                }
+                else if (current == 0 && !counting)
+                {
+                    counting = true;
+                    numZeroCounter++;
+                }
+                else if (current == 0 && counting)
+                {
+                    numZeroCounter++;
+                }
+                else if (current != 0 && counting)
+                {
+                    encoding.AddLast(numZeroCounter);
+                    encoding.AddLast(current);
+                    numZeroCounter = 0;
+                    counting = false;
+                }
+                if (i+1 == dimArray)
+                {
+                    encoding.AddLast(0);
+                    encoding.AddLast(0);
+                }
+            }
+            int[] result = encoding.ToArray();
+            //DEBUG
+            Console.WriteLine("RESULT");
+            for (int i = 0; i < encoding.Count; i++)
+                Console.Write(result[i] + " ");
+            Console.WriteLine();
+            Console.WriteLine("**************************************");
+            return result;
+        }
+        
         /*
         public Tuple<float[,], float[,]> get420SubsamplingBlock(float[,] Cb, float[,] Cr, int k, int w)
         {
@@ -496,22 +632,22 @@ namespace JPEGEncoding
 
         private YCbCr RGBToYCbCr(RGB rgb)
         {
-            float fr = (float)rgb.R / 255;
-            float fg = (float)rgb.G / 255;
-            float fb = (float)rgb.B / 255;
+            float fr = (float)rgb.R;
+            float fg = (float)rgb.G;
+            float fb = (float)rgb.B;
 
-            float Y = (float)(0.2989 * fr + 0.5866 * fg + 0.1145 * fb);
-            float Cb = (float)(-0.1687 * fr - 0.3313 * fg + 0.5000 * fb);
-            float Cr = (float)(0.5000 * fr - 0.4184 * fg - 0.0816 * fb);
+            float Y = (float)(0.299 * fr + 0.587 * fg + 0.114 * fb);
+            float Cb = (float)(-0.1687 * fr - 0.3313 * fg + 0.5 * fb) + 128;
+            float Cr = (float)(0.5 * fr - 0.4187 * fg - 0.0813 * fb) + 128; 
 
             return new YCbCr(Y, Cb, Cr);
         }
         
         private RGB YCbCrToRGB(YCbCr ycbcr)
         {
-            float r = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y + 0.0000 * ycbcr.Cb + 1.4022 * ycbcr.Cr)));
-            float g = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y - 0.3456 * ycbcr.Cb - 0.7145 * ycbcr.Cr)));
-            float b = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y + 1.7710 * ycbcr.Cb + 0.0000 * ycbcr.Cr)));
+            float r = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y + 0.0000 * (ycbcr.Cb - 128) + 1.402 * (ycbcr.Cr - 128))));
+            float g = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y - 0.34414 * (ycbcr.Cb - 128) - 0.71414 * (ycbcr.Cr - 128))));
+            float b = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y + 1.772 * (ycbcr.Cb - 128) + 0.0000 * (ycbcr.Cr - 128))));
 
             return new RGB((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
         }
@@ -542,6 +678,20 @@ namespace JPEGEncoding
                 for (int j = 0; j < height; j++)
                 {
                     debugBlockPrint(BMatrix[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        private void printBlock(int[,] M, int k, int w)
+        {
+            int rows = M.GetLength(0);
+            int columns = M.GetLength(1);
+            for (int i = 0; i < 8; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    Console.Write(M[i + k, j + w] + "    ");
                 }
                 Console.WriteLine();
             }
@@ -593,6 +743,18 @@ namespace JPEGEncoding
             }
         }
 
+        public void printMatrice(int[,] M, int row, int column)
+        {
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < column; j++)
+                {
+                    debugBlockPrint(M[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
         public void printMatrice(double[,] M, int row, int column)
         {
             for (int i = 0; i < row; i++)
@@ -629,9 +791,19 @@ namespace JPEGEncoding
             }
         }
 
+        private void debugBlockPrint(float x)
+        {
+            Console.Write(x.ToString("0.0") + " ");
+        }
+
+        private void debugBlockPrint(int x)
+        {
+            Console.Write(x.ToString("0.0") + " ");
+        }
+
         private void debugBlockPrint(double x)
         {
-            Console.Write(x.ToString("0.0000") + " ");
+            Console.Write(x.ToString("0.0") + " ");
         }
     }//RGBEncoder
 

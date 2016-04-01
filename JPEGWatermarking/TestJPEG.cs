@@ -13,7 +13,7 @@ namespace JPEGEncoding
     {
         public static void Main(string[] args)
         {
-            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\red_square_32.bmp";
+            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\Google3.bmp";
             //tipo di subsampling applicato
             JPEGEncoderIF jpg = new JPEGEncoder();
             Tuple<byte[,], byte[,], byte[,]> rgbResult = jpg.getRGBMatrix(path);
@@ -27,13 +27,13 @@ namespace JPEGEncoding
             float[,] CrMatrix = yCbCrResult.Item3;
             int rows = YMatrix.GetLength(0);
             int columns = YMatrix.GetLength(1);
-            jpg.printMatriciYCbCr(YMatrix, CbMatrix, CrMatrix,rows,columns);
+            //jpg.printMatriciYCbCr(YMatrix, CbMatrix, CrMatrix,rows,columns);
             //Subsampling
             Tuple<float[,], float[,]> chromaResult = jpg.get420Subsampling(CbMatrix, CrMatrix, JPEGEncoder.COPY_BLOCK_PADDING);
             float[,] CbMatrixSub = chromaResult.Item1;
             float[,] CrMatrixSub = chromaResult.Item2;
             Console.WriteLine("SUBSAMPLING");
-            jpg.printMatriciYCbCr(YMatrix, CbMatrixSub, CrMatrixSub, rows, columns);
+            //jpg.printMatriciYCbCr(YMatrix, CbMatrixSub, CrMatrixSub, rows, columns);
             //DCT TEST
             double[,] YDMatrix = new double[rows, columns]; 
             double[,] CbDMatrix = new double[rows, columns];
