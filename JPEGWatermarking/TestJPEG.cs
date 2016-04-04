@@ -3,6 +3,7 @@ using JPEGEncoding;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,8 +15,22 @@ namespace JPEGEncoding
         public static void Main(string[] args)
         {
             string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\Google3.bmp";
+            string pathOutFile = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\test_markers.jpeg";
             //tipo di subsampling applicato
-            JPEGEncoderIF jpg = new JPEGEncoder();
+            JPEGEncoderIF jpg = new JPEGEncoder(path);
+            int[] dimXY = jpg.getImageDimensions();
+            JPEGMarkersWriter markerwr = new JPEGMarkersWriter(dimXY[0], dimXY[1], JPEGUtility.NO_SUBSAMPLING);
+            BinaryWriter bw = new BinaryWriter(File.Open(pathOutFile,FileMode.Create));
+            /*
+            UInt16 hexIn = 0xFFD8;
+            string hex = null;
+            hex = string.Format("{0:X2}", hexIn);
+            Console.WriteLine(hex);
+            */
+            markerwr.WriteJPEGHeader(bw);
+            readFile(pathOutFile);
+
+            /*
             Tuple<byte[,], byte[,], byte[,]> rgbResult = jpg.getRGBMatrix(path);
             byte[,] RMatrix = rgbResult.Item1;
             byte[,] GMatrix = rgbResult.Item2;
@@ -145,5 +160,18 @@ namespace JPEGEncoding
             */
 
         }
+
+        private static void readFile(string pathOut)
+        {
+            using (BinaryReader rd = new BinaryReader(File.Open(pathOut, FileMode.Open)))
+            {
+                int hexIn = 0;
+                string hex = null;
+                hexIn = rd.ReadUInt16();
+                hex = string.Format("{0:X2}", hexIn);
+                Console.WriteLine(hex);
+            }
+        }
     }
+    
 }

@@ -32,6 +32,8 @@ namespace JPEGEncoding
 
         void printMatriciYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix, int width, int height);
 
+        int[] getImageDimensions();
+
         void printMatrice(float[,] M, int row, int column);
 
         void printMatrice(int[,] M, int row, int column);

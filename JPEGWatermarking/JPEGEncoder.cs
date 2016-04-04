@@ -11,72 +11,25 @@ namespace JPEGEncoding
 {
     class JPEGEncoder : JPEGEncoderIF
     {
-
-       public static double[,] QuantizationYMatrix =
-       {
-            { 16, 11, 10, 16, 24, 40, 51, 61 },
-            { 12, 12, 14, 19, 26, 58, 60, 55 },
-            { 14, 13, 16, 24, 40, 57, 69, 56 },
-            { 14, 17, 22, 29, 51, 87, 80, 62 },
-            { 18, 22, 37, 56, 68, 109, 103, 77 },
-            { 24, 35, 55, 64, 81, 104, 113, 92 },
-            { 49, 64, 78, 87, 103, 121, 120, 101 },
-            { 72, 92, 95, 98, 112, 100, 103, 99 }
-
-        };
-
-        public static double[,] QuantizationCMatrix =
-        {
-            { 17, 18, 24, 47, 99, 99, 99, 99 },
-            { 18, 21, 26, 66, 99, 99, 99, 99 },
-            { 24, 26, 56, 99, 99, 99, 99, 99 },
-            { 47, 66, 99, 99, 99, 99, 99, 99 },
-            { 99, 99, 99, 99, 99, 99, 99, 99 },
-            { 99, 99, 99, 99, 99, 99, 99, 99 },
-            { 99, 99, 99, 99, 99, 99, 99, 99 },
-            { 99, 99, 99, 99, 99, 99, 99, 99 }
-        };
-
-        public static int[,] ZigZag =
-        {
-            { 0, 1, 5, 6, 14, 15, 27, 28 },
-            { 2, 4, 7, 13, 16, 26, 29, 42 },
-            { 3, 8, 12, 17, 25, 30, 41, 43 },
-            { 9, 11, 18, 24, 31, 40, 44, 53 },
-            { 10, 19, 23, 32, 39, 45, 52, 54 },
-            { 20, 22, 33, 38, 46, 51, 55, 60 },
-            { 21, 34, 37, 47, 50, 56, 59, 61 },
-            { 35, 36, 48, 49, 57, 58, 62, 63 }
-        };
-
-        public static int[] ZigZagX =
-        { 0, 1, 2, 1, 0, 0, 1, 2, 3, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 0,
-          0, 1, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 4, 5,
-          6, 7, 7, 6, 5, 6, 7, 7 };
-
-        public static int[] ZigZagY =
-        { 1, 0, 0, 1, 2, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6,
-          7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 2, 3, 4, 5, 6, 7, 7, 6,
-          5, 4, 5, 6, 7, 7, 6, 7 };
-    
-        public static int NO_SUBSAMPLING = 0;
-        public static int SUBSAMPLING_422 = 1;
-        public static int SUBSAMPLING_420 = 2;
-
-        public static int ZERO_BLOCK_PADDING = 0;
-        public static int COPY_BLOCK_PADDING = 1;
-        
+        private Bitmap b;
         private DCT dct;
-        
-        
-        public JPEGEncoder()
+
+        public JPEGEncoder(string pathImage)
         {
+            this.b = new Bitmap(pathImage);
             dct = new DCT(8, 8);
         }
         
+        public int[] getImageDimensions()
+        {
+            int[] dimXYPixel = new int[2];
+            dimXYPixel[0] = b.Height;
+            dimXYPixel[1] = b.Width;
+            return dimXYPixel;
+        }
+
         public Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(string pathFile)
         {
-            Bitmap b = new Bitmap(pathFile);
             int yPx = b.Width;
             int xPx = b.Height;
             byte[,] RMatrix = new byte[xPx, yPx];
@@ -89,8 +42,6 @@ namespace JPEGEncoding
                     GMatrix[i, j] = b.GetPixel(j, i).G;
                     BMatrix[i, j] = b.GetPixel(j, i).B;
                 }
-
-            //printMatriciRGB(RMatrix, GMatrix, BMatrix, xPx, yPx);
             return Tuple.Create(RMatrix, GMatrix, BMatrix);
         }
 
@@ -204,7 +155,7 @@ namespace JPEGEncoding
             //type = { 0 : padding di 0 su blocchi adiacenti; 1 : padding con copia del blocco compresso sui blocchi adiacenti }
             float[,] CbSub = new float[16, 16];
             float[,] CrSub = new float[16, 16];
-            if (paddingType == ZERO_BLOCK_PADDING)
+            if (paddingType == JPEGUtility.ZERO_BLOCK_PADDING)
             {
                 //padding sui blocchi adiacenti basato sul valore di type
                 for (int i = 0; i < 16; i++)
@@ -222,7 +173,7 @@ namespace JPEGEncoding
                     }
                 }
             }
-            else if (paddingType == COPY_BLOCK_PADDING)
+            else if (paddingType == JPEGUtility.COPY_BLOCK_PADDING)
             {
                 for (int i = 0; i < 8; i++)
                     for (int j = 0; j < 8; j++)
@@ -248,7 +199,7 @@ namespace JPEGEncoding
             //type = { 0 : padding di 0 su blocchi adiacenti; 1 : padding con copia del blocco compresso sui blocchi adiacenti }
             float[,] CbSub = new float[16, 16];
             float[,] CrSub = new float[16, 16];
-            if (paddingType == ZERO_BLOCK_PADDING)
+            if (paddingType == JPEGUtility.ZERO_BLOCK_PADDING)
             {
                 //padding sui blocchi adiacenti basato sul valore di type
                 for (int i = 0; i < 16; i++)
@@ -264,7 +215,7 @@ namespace JPEGEncoding
                         CrSub[i, j] = (Cr[k + i, w + 2 * j] + Cr[k + i, w + 2 * j + 1]) / 2;
                     }
             }
-            else if (paddingType == COPY_BLOCK_PADDING)
+            else if (paddingType == JPEGUtility.COPY_BLOCK_PADDING)
             {
                 for (int i = 0; i < 16; i++)
                     for (int j = 0; j < 8; j++)
@@ -287,7 +238,7 @@ namespace JPEGEncoding
             double[,] Ydct = new double[rows, columns];
             double[,] Cbdct = new double[rows, columns];
             double[,] Crdct = new double[rows, columns];
-            if (subsamplingType == NO_SUBSAMPLING)
+            if (subsamplingType == JPEGUtility.NO_SUBSAMPLING)
             {
                 //DCT su tutti i blocchi YCC
                 for (int i = 0; i < rows; i += 8)
@@ -304,7 +255,7 @@ namespace JPEGEncoding
                         insertBlock(Crdct, CrblockResult, i, j);
                     }
             }
-            else if(subsamplingType == SUBSAMPLING_422)
+            else if(subsamplingType == JPEGUtility.SUBSAMPLING_422)
             {
                 Boolean calcolaCbCr = true;
                 for (int i = 0; i < rows; i += 8)
@@ -325,12 +276,12 @@ namespace JPEGEncoding
                         }
                         else
                         {
-                            if (paddingType == ZERO_BLOCK_PADDING)
+                            if (paddingType == JPEGUtility.ZERO_BLOCK_PADDING)
                             {
                                 zeroBlock(Cbdct, i, j);
                                 zeroBlock(Crdct, i, j);
                             }
-                            else if (paddingType == COPY_BLOCK_PADDING)
+                            else if (paddingType == JPEGUtility.COPY_BLOCK_PADDING)
                             {
                                 insertBlock(Cbdct, copyBlock(Cbdct, i, j-8), i, j);
                                 insertBlock(Crdct, copyBlock(Crdct, i, j-8), i, j);
@@ -339,7 +290,7 @@ namespace JPEGEncoding
                         }
                     }
             }
-            else if (subsamplingType == SUBSAMPLING_420)
+            else if (subsamplingType == JPEGUtility.SUBSAMPLING_420)
             {
                 Boolean calcolaRowCbCr = true, calcolaColCbCr = true;
                 for (int i = 0; i < rows; i += 8)
@@ -361,12 +312,12 @@ namespace JPEGEncoding
                         }
                         else
                         {
-                            if (paddingType == ZERO_BLOCK_PADDING)
+                            if (paddingType == JPEGUtility.ZERO_BLOCK_PADDING)
                             {
                                 zeroBlock(Cbdct, i, j);
                                 zeroBlock(Crdct, i, j);
                             }
-                            else if (paddingType == COPY_BLOCK_PADDING)
+                            else if (paddingType == JPEGUtility.COPY_BLOCK_PADDING)
                             {
                                 if (calcolaRowCbCr)
                                 {
@@ -510,9 +461,9 @@ namespace JPEGEncoding
             for (int i = 0; i < 8; i++)
                 for (int j = 0; j < 8; j++)
                 {
-                    Ydct[i + k, j + w] /= JPEGEncoder.QuantizationYMatrix[i, j];
-                    Cbdct[i + k, j + w] /= JPEGEncoder.QuantizationCMatrix[i, j];
-                    Crdct[i + k, j + w] /= JPEGEncoder.QuantizationCMatrix[i, j];
+                    Ydct[i + k, j + w] /= JPEGUtility.QuantizationYMatrix[i, j];
+                    Cbdct[i + k, j + w] /= JPEGUtility.QuantizationCMatrix[i, j];
+                    Crdct[i + k, j + w] /= JPEGUtility.QuantizationCMatrix[i, j];
                 }
         }
         /*
@@ -571,12 +522,12 @@ namespace JPEGEncoding
         private int[] getACFromBlock(int[,] Matrix, int k, int w)
         {
             LinkedList<int> encoding = new LinkedList<int>();
-            int dimArray = ZigZagX.GetLength(0);
+            int dimArray = JPEGUtility.ZigZagX.GetLength(0);
             Boolean counting = false;
             int numZeroCounter = 0;
             for (int i=0; i<dimArray; i++)
             {
-                int current = Matrix[ZigZagX[i] + k, ZigZagY[i] + w];
+                int current = Matrix[JPEGUtility.ZigZagX[i] + k, JPEGUtility.ZigZagY[i] + w];
                 if (current != 0 && !counting)
                 {// valore diverso da zero, fuori da una sequenza di zeri
                     encoding.AddLast(0);

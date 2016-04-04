@@ -134,7 +134,6 @@ namespace DCTLib
                 {
                     //...sum the basisfunction for every [u,v] value in the coefficient table
                     double sum = 0d;
-
                     for (int u = 0; u < Width; u++)
                     {
                         for (int v = 0; v < Height; v++)
@@ -143,7 +142,6 @@ namespace DCTLib
                             sum += BasisFunction(a, u, v, x, y) * alpha(u) * alpha(v);
                         }
                     }
-
                     output[x, y] = sum * beta;
                 }
             }
