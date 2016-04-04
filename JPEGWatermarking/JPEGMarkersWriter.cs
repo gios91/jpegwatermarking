@@ -24,9 +24,8 @@ namespace JPEGEncoding
 
         public void writeSOI(BinaryWriter bw)
         {
-            UInt16 marker_0 = 0xFFD8; 
+            UInt16 marker_0 = 0xD8FF; 
             bw.Write(marker_0);
-            //bw.Write(marker_1);
         }
 
         public void writeAPP0(BinaryWriter bw)
@@ -68,6 +67,9 @@ namespace JPEGEncoding
         public void writeCOM(BinaryWriter bw)
         {
             UInt16 marker = 0xFFFE;
+            bw.Write(marker);
+            string s = "A";
+            bw.Write(s);
             // si assume non sia utilizzato nell'immagine
         }
 
@@ -187,9 +189,8 @@ namespace JPEGEncoding
 
         public void writeEOI(BinaryWriter bw)
         {
-            UInt16 marker_0 = 0xFF, marker_1 = 0xD9;
-            bw.Write(marker_0);
-            bw.Write(marker_1);
+            UInt16 marker = 0xD9FF;
+            bw.Write(marker);
         }
 
         public void WriteJPEGHeader(BinaryWriter bw)
@@ -202,6 +203,7 @@ namespace JPEGEncoding
             writeDHT(bw);
             writeSOS(bw);
             */
+            //writeCOM(bw);
             writeEOI(bw);
             bw.Close();
         }

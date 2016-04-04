@@ -15,21 +15,15 @@ namespace JPEGEncoding
         public static void Main(string[] args)
         {
             string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\Google3.bmp";
-            string pathOutFile = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\test_markers.jpeg";
+            string jpegSampleFile = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\pitfallball.jpg";
+            string pathOutFile = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\TEST.jpg";
             //tipo di subsampling applicato
             JPEGEncoderIF jpg = new JPEGEncoder(path);
             int[] dimXY = jpg.getImageDimensions();
             JPEGMarkersWriter markerwr = new JPEGMarkersWriter(dimXY[0], dimXY[1], JPEGUtility.NO_SUBSAMPLING);
-            BinaryWriter bw = new BinaryWriter(File.Open(pathOutFile,FileMode.Create));
-            /*
-            UInt16 hexIn = 0xFFD8;
-            string hex = null;
-            hex = string.Format("{0:X2}", hexIn);
-            Console.WriteLine(hex);
-            */
+            BinaryWriter bw = new BinaryWriter(File.Open(pathOutFile, FileMode.Create));
             markerwr.WriteJPEGHeader(bw);
-            readFile(pathOutFile);
-
+            readFile(jpegSampleFile);
             /*
             Tuple<byte[,], byte[,], byte[,]> rgbResult = jpg.getRGBMatrix(path);
             byte[,] RMatrix = rgbResult.Item1;
@@ -163,15 +157,13 @@ namespace JPEGEncoding
 
         private static void readFile(string pathOut)
         {
-            using (BinaryReader rd = new BinaryReader(File.Open(pathOut, FileMode.Open)))
+            FileStream inFile = File.Open(pathOut, FileMode.Open);
+            using (BinaryReader rd = new BinaryReader(inFile))
             {
-                int hexIn = 0;
-                string hex = null;
-                hexIn = rd.ReadUInt16();
-                hex = string.Format("{0:X2}", hexIn);
-                Console.WriteLine(hex);
+                UInt16 hexIn = rd.ReadUInt16();
+                string hex = string.Format("{0:X2}", hexIn);
+                Console.Write(hex + " ");
             }
         }
     }
-    
 }
