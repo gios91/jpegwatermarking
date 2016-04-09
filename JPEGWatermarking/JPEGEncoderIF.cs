@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,7 +24,7 @@ namespace JPEGEncoding
 
         Tuple<int[,], int[,], int[,]> getRoundToIntMatrices(double[,] YQ, double[,] CbQ, double[,] CrQ);
 
-        Tuple<LinkedList<int[]>, LinkedList<int[]>, LinkedList<int[]>> getACEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ);
+        Tuple<ArrayList, ArrayList, ArrayList> getACEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ);
 
         Tuple<int[],int[], int[]> getDCEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ);
 

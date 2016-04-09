@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,9 @@ namespace JPEGEncoding
 {
     class JPEGUtility
     {
+        private static bool I = true;
+        private static bool O = false;
+
         public static int NO_SUBSAMPLING = 0;
         public static int SUBSAMPLING_422 = 1;
         public static int SUBSAMPLING_420 = 2;
@@ -20,6 +24,10 @@ namespace JPEGEncoding
         
         public static int DHT_ID_Y = 0;
         public static int DHT_ID_CbCr = 1;
+
+        public static int COMPONENT_Y = 1;
+        public static int COMPONENT_Cb = 2;
+        public static int COMPONENT_Cr = 3;
 
         public static Byte[,] QuantizationYMatrix =
        {
@@ -69,24 +77,26 @@ namespace JPEGEncoding
           5, 4, 5, 6, 7, 7, 6, 7 };
 
         public static JPEGHuffmanTable DHTLuminanceDC = new JPEGHuffmanTable
-            ( JPEGUtility.DHT_CLASS_DC, 
+            (JPEGUtility.DHT_CLASS_DC,
               JPEGUtility.DHT_ID_Y,
-              new int[] { 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 }, 
-              new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b } 
-            ); 
+              new UInt16[] { 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
+              new UInt16[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b },
+              getHuffmanCodesLuminanceDC()
+             ); 
 
         public static JPEGHuffmanTable DHTChrominanceDC = new JPEGHuffmanTable
             ( JPEGUtility.DHT_CLASS_DC, 
               JPEGUtility.DHT_ID_CbCr,
-              new int[] { 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 }, 
-              new int[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b } 
+              new UInt16[] { 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 }, 
+              new UInt16[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b },
+              getHuffmanCodesChrominanceDC()
             );
 
         public static JPEGHuffmanTable DHTLuminanceAC = new JPEGHuffmanTable
             (JPEGUtility.DHT_CLASS_AC,
               JPEGUtility.DHT_ID_Y,
-              new int[] { 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d },
-              new int[] {     0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
+              new UInt16[] { 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d },
+              new UInt16[] {     0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
 							  0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
 							  0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xa1, 0x08,
 							  0x23, 0x42, 0xb1, 0xc1, 0x15, 0x52, 0xd1, 0xf0,
@@ -106,14 +116,15 @@ namespace JPEGEncoding
 							  0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xe1, 0xe2,
 							  0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea,
 							  0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
-							  0xf9, 0xfa }
+							  0xf9, 0xfa },
+              getHuffmanCodesLuminanceAC()
             );
 
         public static JPEGHuffmanTable DHTChrominanceAC = new JPEGHuffmanTable
             (JPEGUtility.DHT_CLASS_AC,
               JPEGUtility.DHT_ID_CbCr,
-              new int[] { 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d },
-              new int[] {     0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
+              new UInt16[] { 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d },
+              new UInt16[] {     0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
                               0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
                               0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91,
                               0xa1, 0xb1, 0xc1, 0x09, 0x23, 0x33, 0x52, 0xf0,
@@ -133,22 +144,440 @@ namespace JPEGEncoding
                               0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda,
                               0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9,
                               0xea, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
-                              0xf9, 0xfa }
+                              0xf9, 0xfa },
+              getHuffmanCodesChrominanceAC()
             );
+        
+        private static ArrayList getHuffmanCodesLuminanceAC()
+        {
+            ArrayList codes = new ArrayList();
+            codes.Add(new bool[] { I, O, I, O });//00
+            codes.Add(new bool[] { O, O });//01
+            codes.Add(new bool[] { O, I });//02    
+            codes.Add(new bool[] { I, O, O });//03   
+            codes.Add(new bool[] { I ,I, O, O });//11       
+            codes.Add(new bool[] { I, O, I, I });//04
+            codes.Add(new bool[] { I, I, O, I, O });//05
+            codes.Add(new bool[] { I, I, I, O, O });//21 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, O, I, O });//31
+            codes.Add(new bool[] { I, I, I, I, O, O, O });//06
+            codes.Add(new bool[] { I, I, O, I, I });//12
+            codes.Add(new bool[] { I, I, I, O, I, I });//41
+            codes.Add(new bool[] { I, I, I, I, O, I, O });//51
+            codes.Add(new bool[] { I, I, I, I, I, O, O, O });//07
+            codes.Add(new bool[] { I, I, I, I, I, O, I, I });//61
+            codes.Add(new bool[] { I, I, I, I, I, O, I, O });//71 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, O, O, I });//13
+            codes.Add(new bool[] { I, I, I, I, I, O, O, I });//22
+            codes.Add(new bool[] { I, I, I, I, I, O, I, I, I });//32
+            codes.Add(new bool[] { I, I, I, I, I, I, O, O, O });//81
+            codes.Add(new bool[] { I, I, I, I, I, I, O, I, I, O });//08
+            codes.Add(new bool[] { I, I, I, I, I, O, I, I, O });//14
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, O, O });//42
+            codes.Add(new bool[] { I, I, I, I, I, I, O, O, I });//91 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, O, I, O });//a1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, O, I });//b1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, I, O });//c1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, O, I, O });//09
+            codes.Add(new bool[] { I, I, I, I, I, I, O, I, I, I });//23
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, I, O, I });//33
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, I, I, I });//52
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, O, I });//f0 ZRL k
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, I, I, O });//15
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, I, I, O});//62
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, I, I, I });//72
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, O, O });//d1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, O, I, I });//0a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, I, O, O });//16
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, I, O, O });//24
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, I, I, I });//34 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, O, I, I });//e1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, O, O, I });//25
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, I, O, I });//f1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, I, O, I });//17
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, I, I, I });//18
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, I, I, I });//19
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, O, O, O });//1a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, O, I, O });//26 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, O, I, I });//27
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, I, O, O });//28
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, I, O, I });//29
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, I, I, O });//2a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, O, O, O });//35
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, O, O, I });//36
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, O, I, O });//37
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, O, I, I });//38 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, I, O, O });//39
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, I, O, I });//3a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, I, I, O });//43
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, I, I, I });//44
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, O, O, O });//45
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, O, O, I });//46
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, O, I, O });//47
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, O, I, I });//48 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, I, O, O });//49
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, I, O, I });//4a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, I, I, O });//53
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, I, I, I });//54
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, O, O, O });//55
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, O, O, I });//56
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, O, I, O });//57
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, O, I, I });//58 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, I, O, O });//59
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, I, O, I });//5a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, I, I, O });//63
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, I, I, I });//64
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, O, O, O });//65
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, O, O, I });//66
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, O, I, O });//67
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, O, I, I });//68 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, I, O, O });//69
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, I, O, I });//6a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, I, I, O });//73
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, I, I, I });//74
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, O, O, O });//75
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, O, O, I });//76
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, O, I, O });//77
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, O, I, I });//78 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, I, O, O });//79
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, I, O, I });//7a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, O, O, O });//82
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, I, I, O });//83
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, I, I, I });//84
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, O, O, O });//85
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, O, O, I });//86
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, O, I, O });//87 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, O, I, I });//88
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, I, O, O });//89
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, I, O, I });//8a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, I, I, O });//92
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, I, I, I });//93
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, O, O, O });//94
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, O, O, I });//95
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, O, I, O });//96 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, O, I, I });//97
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, I, O, O });//98
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, I, O, I });//99
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, I, I, O });//9a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, I, I, I });//a2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, O, O, O });//a3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, O, O, I });//a4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, O, I, O });//a5 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, O, I, I });//a6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, I, O, O });//a7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, I, O, I });//a8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, I, I, O });//a9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, I, I, I });//aa
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, O, O, O });//b2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, O, O, I });//b3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, O, I, O });//b4 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, O, I, I });//b5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, I, O, O });//b6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, I, O, I });//b7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, I, I, O });//b8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, I, I, I });//b9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, O, O, O });//ba
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, O, O, I });//c2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, O, I, O });//c3 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, O, I, I });//c4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, I, O, O });//c5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, I, O, I });//c6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, I, I, O });//c7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, I, I, I });//c8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, O, O, O });//c9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, O, O, I });//ca
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, O, I, O });//d2 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, O, I, I });//d3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, I, O, O });//d4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, I, O, I });//d5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, I, I, O });//d6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, I, I, I });//d7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, O, O, O });//d8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, O, O, I });//d9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, O, I, O });//da ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, I, O, O });//e2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, I, O, I});//e3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, I, I, O });//e4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, I, I, I });//e5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, O, O, O });//e6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, O, O, I });//e7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, O, I, O });//e8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, O, I, I });//e9 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, I, O, O });//ea
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, I, I, O });//f2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, I, I, I });//f3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, O, O, O });//f4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, O, O, I });//f5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, O, I, O });//f6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, O, I, I });//f7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, I, O, O });//f8
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, I, O, I });//f9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, O });//fa
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            return codes;
+        }
+
+        private static ArrayList getHuffmanCodesChrominanceAC()
+        {
+            ArrayList codes = new ArrayList();
+            codes.Add(new bool[] { I, O, I, O });//00
+            codes.Add(new bool[] { O, O });//01
+            codes.Add(new bool[] { O, I });//02    
+            codes.Add(new bool[] { I, O, O });//03   
+            codes.Add(new bool[] { I, I, O, O });//11       
+            codes.Add(new bool[] { I, O, I, I });//04
+            codes.Add(new bool[] { I, I, O, I, O });//05
+            codes.Add(new bool[] { I, I, I, O, O });//21 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, O, I, O });//31
+            codes.Add(new bool[] { I, I, I, I, O, O, O });//06
+            codes.Add(new bool[] { I, I, O, I, I });//12
+            codes.Add(new bool[] { I, I, I, O, I, I });//41
+            codes.Add(new bool[] { I, I, I, I, O, I, O });//51
+            codes.Add(new bool[] { I, I, I, I, I, O, O, O });//07
+            codes.Add(new bool[] { I, I, I, I, I, O, I, I });//61
+            codes.Add(new bool[] { I, I, I, I, I, O, I, O });//71 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, O, O, I });//13
+            codes.Add(new bool[] { I, I, I, I, I, O, O, I });//22
+            codes.Add(new bool[] { I, I, I, I, I, O, I, I, I });//32
+            codes.Add(new bool[] { I, I, I, I, I, I, O, O, O });//81
+            codes.Add(new bool[] { I, I, I, I, I, I, O, I, I, O });//08
+            codes.Add(new bool[] { I, I, I, I, I, O, I, I, O });//14
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, O, O });//42
+            codes.Add(new bool[] { I, I, I, I, I, I, O, O, I });//91 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, O, I, O });//a1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, O, I });//b1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, I, O });//c1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, O, I, O });//09
+            codes.Add(new bool[] { I, I, I, I, I, I, O, I, I, I });//23
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, I, O, I });//33
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, I, I, I });//52
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, O, I });//f0 ZRL k
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O, I, I, O });//15
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, I, I, O });//62
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, I, I, I });//72
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, O, O });//d1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, O, I, I });//0a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, I, O, O });//16
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O, I, O, O });//24
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, I, I, I });//34 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, O, I, I });//e1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, O, O, I });//25
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, I, O, I });//f1
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, I, O, I });//17
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, I, I, I });//18
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, I, I, I });//19
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, O, O, O });//1a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, O, I, O });//26 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, O, I, I });//27
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, I, O, O });//28
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, I, O, I });//29
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, I, I, I, O });//2a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, O, O, O });//35
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, O, O, I });//36
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, O, I, O });//37
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, O, I, I });//38 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, I, O, O });//39
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, I, O, I });//3a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, I, I, O });//43
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, O, I, I, I });//44
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, O, O, O });//45
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, O, O, I });//46
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, O, I, O });//47
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, O, I, I });//48 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, I, O, O });//49
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, I, O, I });//4a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, I, I, O });//53
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, I, I, I, I, I });//54
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, O, O, O });//55
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, O, O, I });//56
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, O, I, O });//57
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, O, I, I });//58 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, I, O, O });//59
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, I, O, I });//5a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, I, I, O });//63
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, O, I, I, I });//64
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, O, O, O });//65
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, O, O, I });//66
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, O, I, O });//67
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, O, I, I });//68 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, I, O, O });//69
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, I, O, I });//6a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, I, I, O });//73
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, O, I, I, I, I });//74
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, O, O, O });//75
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, O, O, I });//76
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, O, I, O });//77
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, O, I, I });//78 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, I, O, O });//79
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, I, O, I });//7a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, O, O, O, O, O, O });//82
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, I, I, O });//83
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, O, I, I, I });//84
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, O, O, O });//85
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, O, O, I });//86
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, O, I, O });//87 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, O, I, I });//88
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, I, O, O });//89
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, I, O, I });//8a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, I, I, O });//92
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, O, I, I, I, I, I, I });//93
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, O, O, O });//94
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, O, O, I });//95
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, O, I, O });//96 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, O, I, I });//97
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, I, O, O });//98
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, I, O, I });//99
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, I, I, O });//9a
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, O, I, I, I });//a2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, O, O, O });//a3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, O, O, I });//a4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, O, I, O });//a5 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, O, I, I });//a6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, I, O, O });//a7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, I, O, I });//a8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, I, I, O });//a9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, O, I, I, I, I });//aa
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, O, O, O });//b2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, O, O, I });//b3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, O, I, O });//b4 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, O, I, I });//b5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, I, O, O });//b6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, I, O, I });//b7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, I, I, O });//b8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, O, I, I, I });//b9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, O, O, O });//ba
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, O, O, I });//c2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, O, I, O });//c3 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, O, I, I });//c4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, I, O, O });//c5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, I, O, I });//c6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, I, I, O });//c7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, O, I, I, I, I, I });//c8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, O, O, O });//c9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, O, O, I });//ca
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, O, I, O });//d2 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, O, I, I });//d3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, I, O, O });//d4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, I, O, I });//d5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, I, I, O });//d6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, O, I, I, I });//d7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, O, O, O });//d8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, O, O, I });//d9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, O, I, O });//da ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, I, O, O });//e2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, I, O, I });//e3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, I, I, O });//e4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, O, I, I, I, I });//e5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, O, O, O });//e6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, O, O, I });//e7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, O, I, O });//e8
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, O, I, I });//e9 ok
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, I, O, O });//ea
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, I, I, O });//f2
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, O, I, I, I });//f3
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, O, O, O });//f4
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, O, O, I });//f5
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, O, I, O });//f6
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, O, I, I });//f7
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, I, O, O });//f8
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, I, O, I });//f9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, O });//fa
+            //++++++++++++++++++++++++++++++++++++++++++++++
+            return codes;
+        }
+
+
+        private static ArrayList getHuffmanCodesChrominanceDC()
+        {
+            ArrayList codes = new ArrayList();
+            codes.Add(new bool[] { O, O });                         //category 0
+            codes.Add(new bool[] { O, I, O });                      //category 1 
+            codes.Add(new bool[] { O, I, I });                      //category 2
+            codes.Add(new bool[] { I, O, O });                      //category 3
+            codes.Add(new bool[] { I, O, I });                      //category 4
+            codes.Add(new bool[] { I, I, O });                      //category 5
+            codes.Add(new bool[] { I, I, I, O });                   //category 6
+            codes.Add(new bool[] { I, I, I, I, O });                //category 7
+            codes.Add(new bool[] { I, I, I, I, I, O });             //category 8
+            codes.Add(new bool[] { I, I, I, I, I, I, O });          //category 9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O });       //category 10
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O });    //category 11
+            return codes;
+        }
+
+        private static ArrayList getHuffmanCodesLuminanceDC()
+        {
+            ArrayList codes = new ArrayList();
+            codes.Add(new bool[] { O, O });                         //category 0
+            codes.Add(new bool[] { O, I, O });                      //category 1 
+            codes.Add(new bool[] { O, I, I });                      //category 2
+            codes.Add(new bool[] { I, O, O });                      //category 3
+            codes.Add(new bool[] { I, O, I });                      //category 4
+            codes.Add(new bool[] { I, I, O });                      //category 5
+            codes.Add(new bool[] { I, I, I, O });                   //category 6
+            codes.Add(new bool[] { I, I, I, I, O });                //category 7
+            codes.Add(new bool[] { I, I, I, I, I, O });             //category 8
+            codes.Add(new bool[] { I, I, I, I, I, I, O });          //category 9
+            codes.Add(new bool[] { I, I, I, I, I, I, I, O });       //category 10
+            codes.Add(new bool[] { I, I, I, I, I, I, I, I, O });    //category 11
+            return codes;
+        }
 
         public class JPEGHuffmanTable
         {
             public int DHTClass;
             public int ID;
-            public int[] categoryWordCounts { get; }
-            public int[] categoryWords { get; }
-
-            public JPEGHuffmanTable(int DHTClass, int ID, int[] categoryWordCounts, int[] categoryWords)
+            public UInt16[] categoryWordCounts { get; }
+            public UInt16[] categoryWords { get; }
+            public ArrayList categoryWordsHuffmanCodes { get; }
+            
+            public JPEGHuffmanTable(int DHTClass, int ID, UInt16[] categoryWordCounts, UInt16[] categoryWords, ArrayList categoryWordsHuffmanCodes)
             {
                 this.DHTClass = DHTClass;
                 this.ID = ID;
                 this.categoryWordCounts = categoryWordCounts;
                 this.categoryWords = categoryWords;
+                this.categoryWordsHuffmanCodes = categoryWordsHuffmanCodes;
             }
         }
     }

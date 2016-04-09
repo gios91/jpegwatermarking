@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 using System.Drawing;
 using DCTLib;
+using System.Collections;
 
 namespace JPEGEncoding
 {
@@ -405,22 +406,24 @@ namespace JPEGEncoding
             return Tuple.Create(YQRound, CbQRound, CrQRound);
         }
         
-        public Tuple<LinkedList<int[]>, LinkedList<int[]>, LinkedList<int[]>> getACEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ)
+        public Tuple<ArrayList, ArrayList, ArrayList> getACEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ)
         {
             int rows = YMatrixQ.GetLength(0);
             int columns = YMatrixQ.GetLength(1);
-            LinkedList<int[]> YACEncoding = new LinkedList<int[]>();
-            LinkedList<int[]> CbACEncoding = new LinkedList<int[]>();
-            LinkedList<int[]> CrACEncoding = new LinkedList<int[]>();
+            ArrayList YACEncoding = new ArrayList();
+            ArrayList CbACEncoding = new ArrayList();
+            ArrayList CrACEncoding = new ArrayList();
             for (int i = 0; i < rows; i += 8)
                 for (int j = 0; j < columns; j += 8)
                 {
+                    /*
                     Console.WriteLine("BLOCK");
                     printBlock(YMatrixQ, i, j);
                     Console.WriteLine("*******************");
-                    YACEncoding.AddLast(getACFromBlock(YMatrixQ, i, j));
-                    //CbACEncoding.AddLast(getACFromBlock(CbMatrixQ, i, j));
-                    //CrACEncoding.AddLast(getACFromBlock(CrMatrixQ, i, j));
+                    */
+                    YACEncoding.Add(getACFromBlock(YMatrixQ, i, j));
+                    CbACEncoding.Add(getACFromBlock(CbMatrixQ, i, j));
+                    CrACEncoding.Add(getACFromBlock(CrMatrixQ, i, j));
                 }
             return Tuple.Create(YACEncoding, CbACEncoding, CrACEncoding);
         }
@@ -756,6 +759,7 @@ namespace JPEGEncoding
         {
             Console.Write(x.ToString("0.0") + " ");
         }
+
     }//RGBEncoder
 
 
