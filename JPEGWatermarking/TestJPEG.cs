@@ -4,20 +4,26 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace JPEGEncoding
 {
     class TestJPEG
     {
+        
+        /*
         public static void Main(string[] args)
         {
+            
             string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\Google3.bmp";
             string jpegSampleFile = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\pitfallball.jpg";
-            string pathOutFile = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\output_TEST.jpg";
+            string pathOutFile = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\output_TEST_JPEGENCODER.jpg";
             //tipo di subsampling applicato
             
             JPEGEncoderIF jpg = new JPEGEncoder(path);
@@ -40,6 +46,7 @@ namespace JPEGEncoding
             float[,] CrMatrixSub = chromaResult.Item2;
             Console.WriteLine("SUBSAMPLING");
             */
+            /*
             //jpg.printMatriciYCbCr(YMatrix, CbMatrixSub, CrMatrixSub, rows, columns);
             //DCT TEST
             double[,] YDMatrix = new double[rows, columns];
@@ -61,11 +68,109 @@ namespace JPEGEncoding
             double[,] CbQMatrix = QuantizationResult.Item2;
             double[,] CrQMatrix = QuantizationResult.Item3;
             //ROUNDING YCbCR Quantized
-            Tuple<int[,], int[,], int[,]> RoundingResult = jpg.getRoundToIntMatrices(YQMatrix, CbQMatrix, CrQMatrix);
-            int[,] YQIntMatrix = RoundingResult.Item1;
-            int[,] CbQIntMatrix = RoundingResult.Item2;
-            int[,] CrQIntMatrix = RoundingResult.Item3;
+            Tuple<Int16[,], Int16[,], Int16[,]> RoundingResult = jpg.getRoundToIntMatrices(YQMatrix, CbQMatrix, CrQMatrix);
+            Int16[,] YQIntMatrix = RoundingResult.Item1;
+            Int16[,] CbQIntMatrix = RoundingResult.Item2;
+            Int16[,] CrQIntMatrix = RoundingResult.Item3;
+
+
+            //DA RGB A JPEG: CODIFICA
+
+            Bitmap bmp1 = new Bitmap(path);
+            ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
+
+            // Create an Encoder object based on the GUID
+            // for the Quality parameter category.
+            System.Drawing.Imaging.Encoder myEncoder = System.Drawing.Imaging.Encoder.Quality;
+
+            // Create an EncoderParameters object.
+            // An EncoderParameters object has an array of EncoderParameter
+            // objects. In this case, there is only one
+            // EncoderParameter object in the array.
+            EncoderParameters myEncoderParameters = new EncoderParameters(1);
+
+            EncoderParameter myEncoderParameter = new EncoderParameter(myEncoder, 50L);
+            myEncoderParameters.Param[0] = myEncoderParameter;
+            bmp1.Save(pathOutFile+"_test50.jpg", jpgEncoder, myEncoderParameters);
+
+            myEncoderParameter = new EncoderParameter(myEncoder, 100L);
+            myEncoderParameters.Param[0] = myEncoderParameter;
+            bmp1.Save(pathOutFile + "_test100.jpg", jpgEncoder, myEncoderParameters);
+
+            // Save the bitmap as a JPG file with zero quality level compression.
+            myEncoderParameter = new EncoderParameter(myEncoder, 0L);
+            myEncoderParameters.Param[0] = myEncoderParameter;
+            bmp1.Save(pathOutFile + "_test0.jpg", jpgEncoder, myEncoderParameters);
+            */
+            //DA IMMAGINE JPEG A RGB: DECODIFICA
+
+            /*
+            Console.WriteLine("TEST DECODIFICA");
+            Bitmap input = ConvertToBitmap(pathOutFile + "_test100.jpg");
+            Tuple<byte[,], byte[,], byte[,]> rgbResult2 = jpg.getRGBMatrix(input);
+            byte[,] RMatrix2 = rgbResult2.Item1;
+            byte[,] GMatrix2 = rgbResult2.Item2;
+            byte[,] BMatrix2 = rgbResult2.Item3;
+            jpg.printMatriciRGB(RMatrix, GMatrix, BMatrix, RMatrix.GetLength(0), RMatrix.GetLength(1));
+            */
+                
+            /*
+            Console.WriteLine("ARRAY RGB");
+
+            Bitmap bit = new Bitmap(path);
+            byte[] bmp = imageToArray(bit);
+            for (int i = 0; i < bmp.Length; i++)
+                Console.Write(bmp[i] + " ");
+            */
+
             //**************************************************************
+            /*
+            JPEGMarkersWriter markerwr = new JPEGMarkersWriter((byte)dimXY[0], (byte)dimXY[1], JPEGUtility.NO_SUBSAMPLING);
+            BinaryWriter bw = new BinaryWriter(File.Open(pathOutFile, FileMode.Create));
+            markerwr.WriteJPEGFile(bw, null, null, null, null, null, null, toSByteArray(YMatrix), toSByteArray(CbMatrix), toSByteArray(CrMatrix));
+            //markerwr.EncodeImageBufferToJpg(toIntArray(YQIntMatrix), toIntArray(CbQIntMatrix), toIntArray(CrQIntMatrix), bw);
+            */
+
+            /*
+
+            Tuple<ArrayList, ArrayList, ArrayList> resultAC = jpg.getACEncoding(YQIntMatrix, CbQIntMatrix, CrQIntMatrix);
+            Tuple<Int16[], Int16[], Int16[]> resultDC = jpg.getDCEncoding(YQIntMatrix, CbQIntMatrix, CrQIntMatrix);
+            JPEGMarkersWriter markerwr = new JPEGMarkersWriter((byte)dimXY[0], (byte)dimXY[1], JPEGUtility.NO_SUBSAMPLING);
+            BinaryWriter bw = new BinaryWriter(File.Open(pathOutFile, FileMode.Create));
+            Console.WriteLine("************ Y MATRIX *************");
+            jpg.printMatrice(YQIntMatrix);
+            Int16[] YDC = resultDC.Item1;
+            ArrayList YAC = resultAC.Item1;
+            printDC(YDC, "************ Y DC *************");
+            Console.WriteLine();
+            printAC(YAC, "************ Y AC *************");
+            Console.WriteLine();
+            Console.WriteLine("************ Cb MATRIX *************");
+            jpg.printMatrice(CbQIntMatrix);
+            Int16[] CbDC = resultDC.Item2;
+            ArrayList CbAC = resultAC.Item2;
+            printDC(CbDC, "************ Cb DC *************");
+            Console.WriteLine();
+            printAC(CbAC, "************ Cb AC *************");
+            Console.WriteLine("************ Cr MATRIX *************");
+            jpg.printMatrice(CrQIntMatrix);
+            Int16[] CrDC = resultDC.Item3;
+            ArrayList CrAC = resultAC.Item3;
+            printDC(CrDC, "************ Cr DC *************");
+            Console.WriteLine();
+            printAC(CrAC, "************ Cr AC *************");
+            //markerwr.WriteJPEGFile(bw, YDC, resultDC.Item2, resultDC.Item3, resultAC.Item1, resultAC.Item2, resultAC.Item3);
+
+            Console.WriteLine("*********** HUFFMAN Y DC ********");
+            JPEGUtility.BitString[] v1 = JPEGUtility.getYDCHCode();
+            foreach (JPEGUtility.BitString s in v1)
+                Console.WriteLine(s.print());
+            
+            Console.WriteLine("*********** HUFFMAN Y AC ********");
+            JPEGUtility.BitString[] v2 = JPEGUtility.getYACHCode();
+            for (int i=0; i< v2.Length; i++)
+                Console.WriteLine(v2[i].print());
+            /*
             Tuple<ArrayList, ArrayList, ArrayList> resultAC = jpg.getACEncoding(YQIntMatrix, CbQIntMatrix, CrQIntMatrix);
             Tuple<int[], int[], int[]> resultDC = jpg.getDCEncoding(YQIntMatrix, CbQIntMatrix, CrQIntMatrix);
             JPEGMarkersWriter markerwr = new JPEGMarkersWriter(dimXY[0], dimXY[1], JPEGUtility.NO_SUBSAMPLING);
@@ -77,7 +182,8 @@ namespace JPEGEncoding
             printAC(YAC, "************ Y AC *************");
             markerwr.WriteJPEGFile(bw, YDC, resultDC.Item2, resultDC.Item3, resultAC.Item1, resultAC.Item2, resultAC.Item3);
             readFile(pathOutFile);
-            
+            */
+
             /*
             Tuple<byte[,], byte[,], byte[,]> rgbResult = jpg.getRGBMatrix(path);
             byte[,] RMatrix = rgbResult.Item1;
@@ -188,7 +294,7 @@ namespace JPEGEncoding
             string pathRGB = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\google_maps_64_Chroma.bmp";
             bm.Save(pathRGB);
             */
-            
+
             /*
             //jpg.printMatriciRGB(RMatrix, GMatrix, BMatrix, xPx, yPx);
             Tuple<float[,], float[,], float[,]> yCbCrResult = jpg.getYCbCrMatrix(RMatrix, GMatrix, BMatrix);
@@ -201,9 +307,60 @@ namespace JPEGEncoding
             float[,] CrMatrixSub = chromaResult.Item2;
             jpg.printMatrici(CbMatrixSub, CrMatrixSub);
 
-            */
             
         }
+
+        public static Bitmap ConvertToBitmap(string fileName)
+        {
+            Bitmap bitmap;
+            using (Stream bmpStream = System.IO.File.Open(fileName, System.IO.FileMode.Open))
+            {
+                Image image = Image.FromStream(bmpStream);
+                bitmap = new Bitmap(image);
+            }
+            return bitmap;
+        }
+
+        private static ImageCodecInfo GetEncoder(ImageFormat format)
+        {
+
+            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
+
+            foreach (ImageCodecInfo codec in codecs)
+            {
+                if (codec.FormatID == format.Guid)
+                {
+                    return codec;
+                }
+            }
+            return null;
+        }
+
+
+        private static byte[] imageToArray(Bitmap b)
+        {
+            using(MemoryStream mem = new MemoryStream())
+            {
+                b.Save(mem, ImageFormat.Bmp);
+                return mem.ToArray();
+            }
+        }
+
+
+
+
+        private static byte[] toByteArray(byte[,] M)
+        {
+            int rows = M.GetLength(0);
+            int columns = M.GetLength(1);
+            int dim = rows * columns;
+            byte[] v = new byte[rows * columns];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                    v[(i * columns) + j] = M[i, j];
+            return v;
+        }
+
 
         private static byte ConvertToByte(bool[] bools)
         {
@@ -225,14 +382,14 @@ namespace JPEGEncoding
         private static void readFile(string inputFilename)
         {
             byte[] fileBytes = File.ReadAllBytes(inputFilename);
-            /*
+            
             StringBuilder sb = new StringBuilder();
             foreach (UInt16 b in fileBytes)
             {
                 string hex = string.Format("{0:X2}", Convert.ToString(b, 2).PadLeft(8, '0'));
                 sb.Append(hex);
             }
-            */
+            
             string outputFilename = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\TEST_JPEG_HEX.txt";
             //File.WriteAllText(outputFilename, BitConverter.ToString(fileBytes).Replace("-", ""));
             string s = "";
@@ -249,10 +406,59 @@ namespace JPEGEncoding
                 Console.Write(hex + " ");
             }
 
-            */
+            
         }
 
-        private static void printDC(int[] dc, string message)
+        private static Int16[] toIntArray(int [,] Matrix)
+        {
+            int rows = Matrix.GetLength(0);
+            int columns = Matrix.GetLength(1);
+            int dim = rows * columns;
+            Int16[] v = new Int16[rows * columns];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                    v[(i * columns) + j] = (Int16) Matrix[i, j];
+            return v;
+        }
+
+        private static SByte[] toSByteArray(int[,] Matrix)
+        {
+            int rows = Matrix.GetLength(0);
+            int columns = Matrix.GetLength(1);
+            int dim = rows * columns;
+            SByte[] v = new SByte[rows * columns];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                    v[(i * columns) + j] = (SByte)Matrix[i, j];
+            return v;
+        }
+
+        private static SByte[] toSByteArray(double[,] Matrix)
+        {
+            int rows = Matrix.GetLength(0);
+            int columns = Matrix.GetLength(1);
+            int dim = rows * columns;
+            SByte[] v = new SByte[rows * columns];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                    v[(i * columns) + j] = (SByte)Matrix[i, j];
+            return v;
+        }
+
+        private static SByte[] toSByteArray(float[,] Matrix)
+        {
+            int rows = Matrix.GetLength(0);
+            int columns = Matrix.GetLength(1);
+            int dim = rows * columns;
+            SByte[] v = new SByte[rows * columns];
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                    v[(i * columns) + j] = (SByte)Matrix[i, j];
+            return v;
+        }
+
+
+        private static void printDC(Int16[] dc, string message)
         {
             Console.WriteLine(message);
             for (int i=0; i<dc.Length; i++)
@@ -274,5 +480,6 @@ namespace JPEGEncoding
                 Console.WriteLine("\n");
             }
         }
+        */
     }
 }

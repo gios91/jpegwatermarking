@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,10 @@ namespace JPEGEncoding
     public interface JPEGEncoderIF
     {
         Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(string pathFile);
+
+        Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(Bitmap b);
+
+        void setRGBMatrix(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, ref Bitmap b);
 
         Tuple<float[,], float[,], float[,]> getYCbCrMatrix(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix);
 
@@ -22,11 +27,11 @@ namespace JPEGEncoding
 
         Tuple<double[,], double[,], double[,]> getQuantizedMatrices(double[,] Ydct, double[,] Cbdct, double[,] Crdct);
 
-        Tuple<int[,], int[,], int[,]> getRoundToIntMatrices(double[,] YQ, double[,] CbQ, double[,] CrQ);
+        Tuple<Int16[,], Int16[,], Int16[,]> getRoundToIntMatrices(double[,] YQ, double[,] CbQ, double[,] CrQ);
 
-        Tuple<ArrayList, ArrayList, ArrayList> getACEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ);
+        Tuple<ArrayList, ArrayList, ArrayList> getACEncoding(Int16[,] YMatrixQ, Int16[,] CbMatrixQ, Int16[,] CrMatrixQ);
 
-        Tuple<int[],int[], int[]> getDCEncoding(int[,] YMatrixQ, int[,] CbMatrixQ, int[,] CrMatrixQ);
+        Tuple<Int16[], Int16[], Int16[]> getDCEncoding(Int16[,] YMatrixQ, Int16[,] CbMatrixQ, Int16[,] CrMatrixQ);
 
         void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height);
 
@@ -40,6 +45,6 @@ namespace JPEGEncoding
 
         void printMatrice(double[,] M, int row, int column);
 
-
+        void printMatrice(Int16[,] M);
     }
 }

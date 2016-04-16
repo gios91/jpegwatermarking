@@ -11,6 +11,7 @@ namespace JPEGEncoding
         static string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\Google3.bmp";
         JPEGEncoderIF jpg = new JPEGEncoder(path);
 
+        /*
         public Boolean Subsampling420Debugger(float[,] CbSub, float[,] CrSub, float[,] Cb, float[,] Cr, int subsamplingType)
         {
             //SI ASSUME PER ORA CHE LE MATRICI YCC ABBIANO DIMENSIONE MULTIPLA DI 16 px
@@ -205,5 +206,4 @@ namespace JPEGEncoding
             Console.WriteLine("**************************************");
             */
         }
-    }
 }
