@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,6 +12,7 @@ namespace JPEGWatermarking
     class JPEGWatermarker : JPEGWatermarkerIF
     {
         public static byte EOB = 255;
+        private BinaryFormatter bf = new BinaryFormatter();
 
         public Tuple<byte[,], byte[,], byte[,]> doRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, byte[] byteString)
         {
@@ -60,10 +62,10 @@ namespace JPEGWatermarking
 
         }//doRGBWatermarking
 
-        public byte[] decodeRGBWatermarking(byte[,] R, byte[,] G, byte[,] B)
+
+        public byte[] getRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, int EOS)
         {
             BitBinaryWriter bbw = new BitBinaryWriter();      //memorizzo l'array di byte in BitWriter per scansione bit a bit
-
             int rows = R.GetLength(0);
             int columns = R.GetLength(1);
             bool[] temp = new bool[rows * columns * 3]; //massima dimensione dei dati memorizzabile nell'immagine (in bit)
@@ -78,25 +80,68 @@ namespace JPEGWatermarking
                 }
             byte[] v = bbw.getByteArray(temp);
             int numElem = 0;
+            int cntEOB = 0;
+            bool contaEOB = false;
             for (int k = 0; k < v.Length; k++)
+            {
                 if (v[k] == EOB)
-                    break;
+                {
+                    if (!contaEOB)
+                    {
+                        cntEOB++;
+                        contaEOB = true;
+                        numElem++;
+                    }
+                    else if (contaEOB)
+                    {
+                        cntEOB++;
+                        numElem++;
+                    }
+                }
                 else
-                    numElem++;
+                {
+                    if (contaEOB)
+                    {
+                        if (cntEOB == EOS)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            contaEOB = false;
+                            cntEOB = 0;
+                            numElem++;
+                        }
+                    }
+                    else
+                    {
+                        numElem++;
+                    }
+                }
+            }
             byte[] result = new byte[numElem];
             for (int w = 0; w < numElem; w++)
                 result[w] = v[w];
             return result;
         }
 
-        public Tuple<Dictionary<int, string>, List<int[]>> decodeLZ8Dict(byte[] byteString)
+
+        public List<int[]> getDictByteDecoding(byte[] dictArray)
         {
-            throw new NotImplementedException();
+            MemoryStream dictStreamDes = new MemoryStream();
+            dictStreamDes.Write(dictArray, 0, dictArray.Length);
+            dictStreamDes.Position = 0;
+            List<int[]> dictFromByte = bf.Deserialize(dictStreamDes) as List<int[]>;
+            return dictFromByte;
         }
 
-        public byte[] decodeRGBWatermarkingString(byte[] byteString)
+        public Dictionary<int, string> getDictNewCharsByteDecoding(byte[] dictArray)
         {
-            throw new NotImplementedException();
+            MemoryStream dictNewCharsStreamDes = new MemoryStream();
+            dictNewCharsStreamDes.Write(dictArray, 0, dictArray.Length);
+            dictNewCharsStreamDes.Position = 0;
+            Dictionary<int, string> dictNewCharsFromByte = bf.Deserialize(dictNewCharsStreamDes) as Dictionary<int, string>;
+            return dictNewCharsFromByte;
         }
 
         private int getMaxEOBSequence(byte[] stream)
@@ -132,7 +177,35 @@ namespace JPEGWatermarking
             return cntmaxEOB;
         }
 
-        public byte[] getDictFinalStream (byte[] dict, byte[] dictNewChars)
+        private int getEOS(byte[] dict, byte[] dictNewChars)
+        {
+            int maxEOBSeq = 0;  //massimo tra max seq EOB di dict e max seq EOB di dictNewChars
+            int maxSeqEOBDict = getMaxEOBSequence(dict);
+            int maxSeqEOBDictNewChars = getMaxEOBSequence(dictNewChars);
+            if (maxSeqEOBDict > maxSeqEOBDictNewChars)
+                maxEOBSeq = maxSeqEOBDict;
+            else
+                maxEOBSeq = maxSeqEOBDictNewChars;
+            int EOS = maxEOBSeq + 2;            //numero di EOB che determinano la fine del flusso
+            return EOS;
+        }
+
+
+        private int getEOD(byte[] dict, byte[] dictNewChars)
+        {
+            int maxEOBSeq = 0;  //massimo tra max seq EOB di dict e max seq EOB di dictNewChars
+            int maxSeqEOBDict = getMaxEOBSequence(dict);
+            int maxSeqEOBDictNewChars = getMaxEOBSequence(dictNewChars);
+            if (maxSeqEOBDict > maxSeqEOBDictNewChars)
+                maxEOBSeq = maxSeqEOBDict;
+            else
+                maxEOBSeq = maxSeqEOBDictNewChars;
+            int EOD = maxEOBSeq + 1;            //numero di EOB che determinano la fine del flusso
+            return EOD;
+        }
+
+
+        public Tuple<byte[],int,int> createWatermarkingString (byte[] dict, byte[] dictNewChars)
         {
             /* Lo stream finale è così composto: 
              * | byte di dict | EOD = EOB * maxEOBSeq + 1 | byte di dictNewChars | EOS = EOB *  maxEOBSeq + 2 |  
@@ -168,9 +241,32 @@ namespace JPEGWatermarking
                     finalStream[i] = EOB;
                 }
             }
-            return finalStream;
+            return Tuple.Create(finalStream,EOD, EOS);
         }
 
+        public byte[] decodeWatermarkingString(byte[] byteString, int EOD, int EOS)
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] getDictByteEncoding(List<int[]> dict)
+        {
+            BinaryFormatter bf = new BinaryFormatter();
+            MemoryStream dictStream = new MemoryStream();
+            bf.Serialize(dictStream, dict);
+            byte[] dictArray = dictStream.ToArray();
+            return dictArray;
+        }
+
+        public byte[] getDictNewCharsByteEncoding(Dictionary<int, string> dictNewChars)
+        {
+            BinaryFormatter bf = new BinaryFormatter();
+            MemoryStream dictStream = new MemoryStream();
+            bf.Serialize(dictStream, dictNewChars);
+            byte[] dictNewCharsArray = dictStream.ToArray();
+            return dictNewCharsArray;
+        }
+        
         public class BitBinaryWriter : System.IO.BinaryWriter
         {
             private bool[] bitArray;
@@ -228,6 +324,25 @@ namespace JPEGWatermarking
                 return result;
             }
 
+            public byte[] getByteArray(BitArray v)
+            {
+                byte[] result = new byte[v.Length / 8];
+                int cntByte = 0;
+                for (int i = 0; i < v.Length; i += 8)
+                {
+                    bool[] b = new bool[8];
+                    int cnt = 0;
+                    for (int j = i; j < i + 8; j++)
+                    {
+                        b[cnt] = v[j];
+                        cnt++;
+                    }
+                    byte currentByte = ConvertToByte(b);
+                    result[cntByte] = currentByte;
+                    cntByte++;
+                }
+                return result;
+            }
 
             /*
             public override void Flush()
@@ -395,6 +510,18 @@ namespace JPEGWatermarking
                 return ConvertToByte(result);
             }
 
+            public BitArray getREncoding(byte[] stream, int numR)
+            {
+                BitArray v = new BitArray(stream);
+                int lengthEnc = stream.Length * 8 * numR;
+                BitArray enc = new BitArray(lengthEnc);
+                for(int i=0; i<v.Length; i++)
+                    for (int j=0; j<numR; j++)
+                    {
+                        enc[i * 3 + j] = v[i];
+                    }
+                return enc;
+            }
         } //BitBitBinaryWriter
     }
 

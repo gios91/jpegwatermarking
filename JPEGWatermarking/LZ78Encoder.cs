@@ -176,10 +176,6 @@ namespace LZ78Encoding
             //This gives you the byte array.
             byte[] byteDict = mStream.ToArray();
             Console.WriteLine(byteDict.Length);
-            foreach (byte b in byteDict)
-            {
-                Console.Write(Convert.ToString(b,2)+" ");
-            }
             return byteDict;
         }
 

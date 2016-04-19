@@ -8,13 +8,24 @@ using System.Media;
 using DCTLib;
 using System.Collections;
 using System.Drawing;
+using FreeImageAPI;
+using System.IO;
 
 namespace JPEGEncoding
 {
     class JPEGEncoder : JPEGEncoderIF
     {
         private Bitmap b;
+        private FIBITMAP fib;
         private DCT dct;
+
+        public JPEGEncoder() { }
+
+        public JPEGEncoder(FIBITMAP image)
+        {
+            this.fib = image;
+            dct = new DCT(8, 8);
+        }
 
         public JPEGEncoder(string pathImage)
         {
@@ -30,6 +41,15 @@ namespace JPEGEncoding
             return dimXYPixel;
         }
 
+        public void encodeToJpeg(FIBITMAP dib, string pathOutput, FREE_IMAGE_SAVE_FLAGS jpegQuality, FREE_IMAGE_SAVE_FLAGS jpegSubsampling)
+        {
+            //controllare che i FREE_IMAGE_SAVE_FLAGS siano validi: jpegQuality € {JPEG_QUALITYSUPERB (100:1), JPEG_QUALITYGOOD (75:1), 
+            //JPEG_QUALITYNORMAL (50:1), JPEG_QUALITYAVERAGE (25:1), JPEG_QUALITYBAD (10:1)} e jpegSub 
+            FreeImage.Save(FREE_IMAGE_FORMAT.FIF_JPEG, dib, pathOutput, jpegQuality | jpegSubsampling);
+        }
+
+
+        /*
         public Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(string pathFile)
         {
             int yPx = b.Width;
@@ -46,7 +66,9 @@ namespace JPEGEncoding
                 }
             return Tuple.Create(RMatrix, GMatrix, BMatrix);
         }
+        */
 
+        /*
         public Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(Bitmap b)
         {
             int yPx = b.Width;
@@ -63,7 +85,59 @@ namespace JPEGEncoding
                 }
             return Tuple.Create(RMatrix, GMatrix, BMatrix);
         }
+        */
 
+        public Tuple<byte[,], byte[,], byte[,]> getRGBMatrixFI(FIBITMAP dib)
+        {
+            int yPx = (int)FreeImage.GetWidth(dib);
+            int xPx = (int)FreeImage.GetHeight(dib);
+            byte[,] RMatrix = new byte[xPx, yPx];
+            byte[,] GMatrix = new byte[xPx, yPx];
+            byte[,] BMatrix = new byte[xPx, yPx];
+            for (int i = 0; i < xPx; i++)
+            {
+                //legge una singola riga del bitmap
+                Scanline<RGBTRIPLE> bitmapRow = new Scanline<RGBTRIPLE>(dib, xPx - 1 - i);
+                RGBTRIPLE[] rgb = bitmapRow.Data;
+                for (int j = 0; j < yPx; j++)
+                {
+                    RMatrix[i, j] = rgb[j].rgbtRed;
+                    GMatrix[i, j] = rgb[j].rgbtGreen;
+                    BMatrix[i, j] = rgb[j].rgbtBlue;
+                }
+            }
+            return Tuple.Create(RMatrix, GMatrix, BMatrix);
+        }
+
+        /*
+        public Tuple<double[,], double[,], double[,]> modificaDCT(double[,] YMatrix, double[,] CbMatrix, double[,] CrMatrix)
+        {
+            double eps = 0;
+
+            int yPx = YMatrix.GetLength(0);
+            int xPx = YMatrix.GetLength(1); 
+            double[,] YDCTMatrix = new double[xPx, yPx];
+            double[,] CbDCTMatrix = new double[xPx, yPx];
+            double[,] CrDCTMatrix = new double[xPx, yPx];
+            for (int i = 0; i < xPx; i++)
+                for (int j = 0; j < yPx; j++)
+                {
+                    YDCTMatrix[i, j] = YMatrix[i, j] + eps;
+                    CbDCTMatrix[i, j] = CbMatrix[i,j] + eps;
+                    CrDCTMatrix[i, j] = CrMatrix[i,j] + eps;
+                }
+            return Tuple.Create(YDCTMatrix, CbDCTMatrix, CrDCTMatrix);
+        }
+        */
+
+        public byte[] serializeJpegImage(Bitmap b)
+        {
+            MemoryStream stream = new MemoryStream();
+            b.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
+            byte[] streamArray = stream.ToArray();
+            return streamArray;
+        }
+        
         public void setRGBMatrix(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, ref Bitmap b)
         {
             int yPx = b.Width;
@@ -72,10 +146,28 @@ namespace JPEGEncoding
                 for (int j = 0; j < yPx; j++)
                 {
                     System.Windows.Media.Color col = System.Windows.Media.Color.FromRgb(RMatrix[i, j], GMatrix[i, j], BMatrix[i, j]);
-                    b.SetPixel(i,j, System.Drawing.Color.FromArgb(col.A,col.R,col.G,col.B));
+                    b.SetPixel(j,i, System.Drawing.Color.FromArgb(col.A,col.R,col.G,col.B));
                 }
         }
         
+        public void setRGBMatrix(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, ref FIBITMAP dib)
+        {
+            int yPx = (int)FreeImage.GetWidth(dib);
+            int xPx = (int)FreeImage.GetHeight(dib);
+            for (int i = 0; i < xPx; i++)
+            {
+                Scanline<RGBTRIPLE> imageRow = new Scanline<RGBTRIPLE>(dib, xPx - 1 - i);
+                RGBTRIPLE[] rgbt = imageRow.Data;
+                for (int j = 0; j < rgbt.Length; j++)
+                {
+                    rgbt[j].rgbtRed = RMatrix[i,j];
+                    rgbt[j].rgbtGreen = GMatrix[i,j];
+                    rgbt[j].rgbtBlue = BMatrix[i,j];
+                }
+                imageRow.Data = rgbt;
+            }
+        }
+
         public Tuple<float[,], float[,], float[,]> getYCbCrMatrix(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix)
         {
             int xPx = RMatrix.GetLength(0);
@@ -378,6 +470,31 @@ namespace JPEGEncoding
             return Tuple.Create(Ydct, Cbdct, Crdct);
         }
 
+
+        public Tuple<double[,], double[,], double[,]> getIDCTMatrices(double[,] Y, double[,] Cb, double[,] Cr)
+        {
+            int rows = Y.GetLength(0);
+            int columns = Y.GetLength(1);
+            double[,] Ydct = new double[rows, columns];
+            double[,] Cbdct = new double[rows, columns];
+            double[,] Crdct = new double[rows, columns];
+            for (int i = 0; i < rows; i += 8)
+                for (int j = 0; j < columns; j += 8)
+                {
+                    double[,] Yblock = copyBlock(Y, i, j);
+                    double[,] Cbblock = copyBlock(Cb, i, j);
+                    double[,] Crblock = copyBlock(Cr, i, j);
+                    double[,] YblockResult = dct.IDCT2D(Yblock);
+                    double[,] CbblockResult = dct.IDCT2D(Cbblock);
+                    double[,] CrblockResult = dct.IDCT2D(Crblock);
+                    insertBlock(Ydct, YblockResult, i, j);
+                    insertBlock(Cbdct, CbblockResult, i, j);
+                    insertBlock(Crdct, CrblockResult, i, j);
+                }
+
+            return Tuple.Create(Ydct, Cbdct, Crdct);
+        }
+
         private double[,] copyBlock(double[,] M, int k, int w)
         {
             double[,] copyBlock = new double[8, 8];
@@ -617,183 +734,24 @@ namespace JPEGEncoding
         
         private RGB YCbCrToRGB(YCbCr ycbcr)
         {
+
+            byte r = (byte) (ycbcr.Y + 0.0000 * (ycbcr.Cb - 128) + 1.402 * (ycbcr.Cr - 128));
+            byte g = (byte) (ycbcr.Y - 0.34414 * (ycbcr.Cb - 128) - 0.71414 * (ycbcr.Cr - 128));
+            byte b = (byte) (ycbcr.Y + 1.772 * (ycbcr.Cb - 128) + 0.0000 * (ycbcr.Cr - 128));
+            
+            /*
             float r = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y + 0.0000 * (ycbcr.Cb - 128) + 1.402 * (ycbcr.Cr - 128))));
             float g = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y - 0.34414 * (ycbcr.Cb - 128) - 0.71414 * (ycbcr.Cr - 128))));
             float b = Math.Max(0.0f, Math.Min(1.0f, (float)(ycbcr.Y + 1.772 * (ycbcr.Cb - 128) + 0.0000 * (ycbcr.Cr - 128))));
+            */
 
-            return new RGB((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
+            return new RGB(r,g,b);
         }
 
-        public void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height)
+        public void encodeToJpeg(FIBITMAP dib, string pathOutput, int[] qualityParams)
         {
-            Console.WriteLine("R Matrix");
-            for (int i = 0; i < width; i++)
-            {
-                for (int j = 0; j < height; j++)
-                {
-                    debugBlockPrint(RMatrix[i, j]);
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine("G Matrix");
-            for (int i = 0; i < width; i++)
-            {
-                for (int j = 0; j < height; j++)
-                {
-                    debugBlockPrint(GMatrix[i, j]);
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine("B Matrix");
-            for (int i = 0; i < width; i++)
-            {
-                for (int j = 0; j < height; j++)
-                {
-                    debugBlockPrint(BMatrix[i, j]);
-                }
-                Console.WriteLine();
-            }
+            throw new NotImplementedException();
         }
-
-        private void printBlock(int[,] M, int k, int w)
-        {
-            int rows = M.GetLength(0);
-            int columns = M.GetLength(1);
-            for (int i = 0; i < 8; i++)
-            {
-                for (int j = 0; j < 8; j++)
-                {
-                    Console.Write(M[i + k, j + w] + "    ");
-                }
-                Console.WriteLine();
-            }
-        }
-
-        public void printMatriciYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix, int width, int height)
-        {
-            Console.WriteLine("Y Matrix");
-            for (int i = 0; i < width; i++)
-            {
-                for (int j = 0; j < height; j++)
-                {
-                    debugBlockPrint(YMatrix[i, j]);
-                }
-                Console.Write(" " + (i));
-                Console.WriteLine();
-            }
-            Console.WriteLine("Cb Matrix");
-            for (int i = 0; i < width; i++)
-            {
-                for (int j = 0; j < height; j++)
-                {
-                    debugBlockPrint(CbMatrix[i, j]);
-                }
-                Console.Write(" " + (i));
-                Console.WriteLine();
-            }
-            Console.WriteLine("Cr Matrix");
-            for (int i = 0; i < width; i++)
-            {
-                for (int j = 0; j < height; j++)
-                {
-                    debugBlockPrint(CrMatrix[i, j]);
-                }
-                Console.Write(" " + (i));
-                Console.WriteLine();
-            }
-        }
-
-        public void printMatrice(float[,] M, int row, int column)
-        {
-            for (int i = 0; i < row; i++)
-            {
-                for (int j = 0; j < column; j++)
-                {
-                    debugBlockPrint(M[i, j]);
-                }
-                Console.WriteLine();
-            }
-        }
-
-        public void printMatrice(int[,] M, int row, int column)
-        {
-            for (int i = 0; i < row; i++)
-            {
-                for (int j = 0; j < column; j++)
-                {
-                    debugBlockPrint(M[i, j]);
-                }
-                Console.WriteLine();
-            }
-        }
-
-        public void printMatrice(double[,] M, int row, int column)
-        {
-            for (int i = 0; i < row; i++)
-            {
-                for (int j = 0; j < column; j++)
-                {
-                    debugBlockPrint(M[i, j]);
-                }
-                Console.WriteLine();
-            }
-        }
-
-        public void printMatrice(Int16[,] M)
-        {
-            int row = M.GetLength(0);
-            int columns = M.GetLength(1);
-
-            for (int i = 0; i < row; i++)
-            {
-                for (int j = 0; j < columns; j++)
-                {
-                    debugBlockPrint(M[i, j]);
-                }
-                Console.WriteLine();
-            }
-        }
-
-
-        public void printMatrici(float[,] CbSub, float[,] CrSub)
-        {
-            int x = CbSub.GetLength(0);
-            int y = CbSub.GetLength(1);
-            Console.WriteLine("Matrix  Cb");
-            for (int i = 0; i < x; i++)
-            {
-                for (int j = 0; j < y; j++)
-                {
-                    debugBlockPrint(CbSub[i, j]);
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine("Matrix  Cr");
-            for (int i = 0; i < x; i++)
-            {
-                for (int j = 0; j < y; j++)
-                {
-                    debugBlockPrint(CrSub[i, j]);
-                }
-                Console.WriteLine();
-            }
-        }
-
-        private void debugBlockPrint(float x)
-        {
-            Console.Write(x.ToString("0.0") + " ");
-        }
-
-        private void debugBlockPrint(int x)
-        {
-            Console.Write(x.ToString("0.0") + " ");
-        }
-
-        private void debugBlockPrint(double x)
-        {
-            Console.Write(x.ToString("0.0") + " ");
-        }
-
     }//RGBEncoder
 
 

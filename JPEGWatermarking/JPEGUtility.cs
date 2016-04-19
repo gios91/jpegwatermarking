@@ -29,6 +29,14 @@ namespace JPEGEncoding
         public static int COMPONENT_Cb = 2;
         public static int COMPONENT_Cr = 3;
 
+        
+
+
+
+
+
+
+
         public static Byte[] Category = new Byte[65535];
         public static BitString[] BitCode = new BitString[65535];
 
@@ -706,6 +714,244 @@ namespace JPEGEncoding
                 c[i] = new BitString();
             for (int i = 0; i < dimD; i++)
                 d[i] = new BitString();
+        }
+
+        public void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height)
+        {
+            Console.WriteLine("R Matrix");
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
+                {
+                    debugBlockPrint(RMatrix[i, j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("G Matrix");
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
+                {
+                    debugBlockPrint(GMatrix[i, j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("B Matrix");
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
+                {
+                    debugBlockPrint(BMatrix[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        private void printBlock(int[,] M, int k, int w)
+        {
+            int rows = M.GetLength(0);
+            int columns = M.GetLength(1);
+            for (int i = 0; i < 8; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    Console.Write(M[i + k, j + w] + "    ");
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public void printMatriciYCbCr(float[,] YMatrix, float[,] CbMatrix, float[,] CrMatrix, int width, int height)
+        {
+            Console.WriteLine("Y Matrix");
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
+                {
+                    debugBlockPrint(YMatrix[i, j]);
+                }
+                Console.Write(" " + (i));
+                Console.WriteLine();
+            }
+            Console.WriteLine("Cb Matrix");
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
+                {
+                    debugBlockPrint(CbMatrix[i, j]);
+                }
+                Console.Write(" " + (i));
+                Console.WriteLine();
+            }
+            Console.WriteLine("Cr Matrix");
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
+                {
+                    debugBlockPrint(CrMatrix[i, j]);
+                }
+                Console.Write(" " + (i));
+                Console.WriteLine();
+            }
+        }
+
+        public void printMatrice(float[,] M, int row, int column)
+        {
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < column; j++)
+                {
+                    debugBlockPrint(M[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public void printMatrice(int[,] M, int row, int column)
+        {
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < column; j++)
+                {
+                    debugBlockPrint(M[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public void printMatrice(double[,] M, int row, int column)
+        {
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < column; j++)
+                {
+                    debugBlockPrint(M[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public void printMatrice(Int16[,] M)
+        {
+            int row = M.GetLength(0);
+            int columns = M.GetLength(1);
+
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    debugBlockPrint(M[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public void printMatrice(float[,] M)
+        {
+            int row = M.GetLength(0);
+            int columns = M.GetLength(1);
+
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    debugBlockPrint(M[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public void printMatrice(byte[,] M)
+        {
+            int row = M.GetLength(0);
+            int columns = M.GetLength(1);
+
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    debugBlockPrint(M[i, j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine();
+        }
+
+
+        public void printMatrice(int[,] M)
+        {
+            int row = M.GetLength(0);
+            int columns = M.GetLength(1);
+
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    debugBlockPrint(M[i, j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine();
+        }
+
+        public void printMatrice(double[,] M)
+        {
+            int row = M.GetLength(0);
+            int columns = M.GetLength(1);
+
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    debugBlockPrint(M[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+
+        public void printMatrici(float[,] CbSub, float[,] CrSub)
+        {
+            int x = CbSub.GetLength(0);
+            int y = CbSub.GetLength(1);
+            Console.WriteLine("Matrix  Cb");
+            for (int i = 0; i < x; i++)
+            {
+                for (int j = 0; j < y; j++)
+                {
+                    debugBlockPrint(CbSub[i, j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("Matrix  Cr");
+            for (int i = 0; i < x; i++)
+            {
+                for (int j = 0; j < y; j++)
+                {
+                    debugBlockPrint(CrSub[i, j]);
+                }
+                Console.WriteLine();
+            }
+        }
+
+        private void debugBlockPrint(float x)
+        {
+            Console.Write(x.ToString("0.0") + " ");
+        }
+
+        private void debugBlockPrint(int x)
+        {
+            Console.Write(x.ToString("0.0") + " ");
+        }
+
+        private void debugBlockPrint(double x)
+        {
+            Console.Write(x.ToString("0.0") + " ");
+        }
+
+        private void debugBlockPrint(byte x)
+        {
+            Console.Write(x.ToString("0.0") + " ");
         }
 
         public class BitString

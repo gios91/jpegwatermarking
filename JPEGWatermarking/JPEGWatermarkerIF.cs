@@ -13,12 +13,19 @@ namespace JPEGWatermarking
         */
         Tuple<byte[,], byte[,], byte[,]> doRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, byte[] byteString);
 
-        byte[] decodeRGBWatermarking(byte[,] R, byte[,] G, byte[,] B);     //EOS è il numero di bit da estrarre
+        byte[] getRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, int EOS);     //EOS è il numero di bit da estrarre
         
-        Tuple<Dictionary<int, string>, List<int[]>> decodeLZ8Dict(byte[] byteString);
+        byte[] decodeWatermarkingString(byte[] byteString, int EOD, int EOS);
 
-        byte[] decodeRGBWatermarkingString(byte[] byteString);
+        Tuple<byte[],int,int> createWatermarkingString(byte[] dict, byte[] dictNewChars);
 
-        byte[] getDictFinalStream(byte[] dict, byte[] dictNewChars);
+        byte[] getDictByteEncoding(List<int[]> dict);
+
+        byte[] getDictNewCharsByteEncoding(Dictionary<int, string> dictNewChars);
+
+        List<int[]> getDictByteDecoding(byte[] dict);
+
+        Dictionary<int, string> getDictNewCharsByteDecoding(byte[] dictNewChars);
+        
     }
 }
