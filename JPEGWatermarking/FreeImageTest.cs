@@ -11,7 +11,7 @@ namespace JPEGWatermarking
 {
     class FreeImageTest
     {
-        const string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\Google3.bmp";
+        const string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\blueskyok.bmp";
         const string outFileName = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\bluesky_jpeg_nosubsampling444.jpg";
         static FIBITMAP dib = new FIBITMAP();
         string message = null;
@@ -56,9 +56,7 @@ namespace JPEGWatermarking
             byte[,] GMatrix = rgbResult.Item2;
             byte[,] BMatrix = rgbResult.Item3;
             Console.WriteLine("******** RGB INIZIALI ********");
-            jpg.printMatriciRGB(RMatrix, GMatrix, BMatrix, RMatrix.GetLength(0), RMatrix.GetLength(1));
-
-
+            JPEGUtility.printMatriciRGB(RMatrix, GMatrix, BMatrix, BMatrix.GetLength(0), BMatrix.GetLength(1));
 
 
             /*
@@ -82,9 +80,7 @@ namespace JPEGWatermarking
 
             // Make sure to set the handle to null so that it is clear that the handle is not pointing to a bitmap.
             dib.SetNull();
-            
-
-
+          
         }
         */
     }

@@ -716,7 +716,7 @@ namespace JPEGEncoding
                 d[i] = new BitString();
         }
 
-        public void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height)
+        public static void printMatriciRGB(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix, int width, int height)
         {
             Console.WriteLine("R Matrix");
             for (int i = 0; i < width; i++)
@@ -944,12 +944,12 @@ namespace JPEGEncoding
             Console.Write(x.ToString("0.0") + " ");
         }
 
-        private void debugBlockPrint(double x)
+        private static void debugBlockPrint(double x)
         {
             Console.Write(x.ToString("0.0") + " ");
         }
 
-        private void debugBlockPrint(byte x)
+        private static void debugBlockPrint(byte x)
         {
             Console.Write(x.ToString("0.0") + " ");
         }

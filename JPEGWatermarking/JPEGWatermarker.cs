@@ -26,6 +26,7 @@ namespace JPEGWatermarking
 
             int imageNumOfPx = R.GetLength(0) * R.GetLength(1) * 3;
             int textNumOfBit = byteString.Length * 8;
+            
             if ( textNumOfBit <= imageNumOfPx )
             {
                 for (int i = 0; i < rows; i++)
@@ -56,7 +57,7 @@ namespace JPEGWatermarking
             }
             else
             {
-                Console.WriteLine("Non è possibile inserire il dict perché di dimensioni maggiori dell'img");
+                throw new Exception("Non è possibile inserire il dict perché di dimensioni maggiori dell'img");
             }
             return Tuple.Create(RNew, GNew, BNew);
 
@@ -265,6 +266,14 @@ namespace JPEGWatermarking
                     {
                         cntEOB++;
                         currentBytes.Add(byteString[i]);
+                        if (i == byteString.Length - 1 )
+                        {
+                            dictNewChars = new byte[currentBytes.Count - EOS];
+                            for (int k = 0; k < dictNewChars.Length; k++)
+                                dictNewChars[k] = (byte)currentBytes[k];
+                            contaEOB = false;
+                            cntEOB = 0;
+                        }
                     }
                 }
                 else
@@ -282,14 +291,21 @@ namespace JPEGWatermarking
                             contaEOB = false;
                             cntEOB = 0;
                         }
+                        /*
                         else if (cntEOB == EOS)
                         {
                             dictNewChars = new byte[currentBytes.Count - EOS];
                             for (int k = 0; k < dictNewChars.Length; k++)
-                                dict[k] = (byte)currentBytes[k];
+                                dictNewChars[k] = (byte)currentBytes[k];
                             contaEOB = false;
                             cntEOB = 0;
-                            break;
+                        }
+                        */
+                        else
+                        {
+                            contaEOB = false;
+                            cntEOB = 0;
+                            currentBytes.Add(byteString[i]);
                         }
                     }
                     else
