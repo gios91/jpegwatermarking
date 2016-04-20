@@ -18,9 +18,9 @@ namespace JPEGWatermarking
             {
                 int cntZero = 0;
                 int cntUno = 0;
-                for (int j=i; j<i+numR; j++)
+                for (int j=0; j<numR; j++)
                 {
-                    if (received[j]) cntUno++;
+                    if (received[i+j]) cntUno++;
                     else cntZero++;
                 }
                 if (cntUno > cntZero) result[resIndex] = true;

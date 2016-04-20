@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,5 +31,30 @@ namespace JPEGWatermarking
             }
             return Tuple.Create(RMatrix, GMatrix, BMatrix);
         }
+
+        public Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(Bitmap b)
+        {
+            int yPx = b.Width;
+            int xPx = b.Height;
+            byte[,] RMatrix = new byte[xPx, yPx];
+            byte[,] GMatrix = new byte[xPx, yPx];
+            byte[,] BMatrix = new byte[xPx, yPx];
+            for (int i = 0; i < xPx; i++)
+                for (int j = 0; j < yPx; j++)
+                {
+                    RMatrix[i, j] = b.GetPixel(j, i).R;
+                    GMatrix[i, j] = b.GetPixel(j, i).G;
+                    BMatrix[i, j] = b.GetPixel(j, i).B;
+                }
+            return Tuple.Create(RMatrix, GMatrix, BMatrix);
+        }
+
+        public Bitmap deserializeJpegImage(byte[] imageStream)
+        {
+            ImageConverter ic = new ImageConverter();
+            Image img = (Image)ic.ConvertFrom(imageStream);
+            return new Bitmap(img);
+        }
+        
     }
 }

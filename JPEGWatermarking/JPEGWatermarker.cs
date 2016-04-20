@@ -244,9 +244,61 @@ namespace JPEGWatermarking
             return Tuple.Create(finalStream,EOD, EOS);
         }
 
-        public byte[] decodeWatermarkingString(byte[] byteString, int EOD, int EOS)
+        public Tuple<byte[],byte[]> decodeWatermarkingString(byte[] byteString, int EOD, int EOS)
         {
-            throw new NotImplementedException();
+            ArrayList currentBytes = new ArrayList();
+            byte[] dict = null;
+            byte[] dictNewChars = null;
+            bool contaEOB = false;
+            int cntEOB = 0;
+            for (int i=0; i < byteString.Length; i++)
+            {
+                if (byteString[i] == EOB)
+                {
+                    if (!contaEOB)
+                    {
+                        cntEOB++;
+                        contaEOB = true;
+                        currentBytes.Add(byteString[i]);
+                    }
+                    else if (contaEOB)
+                    {
+                        cntEOB++;
+                        currentBytes.Add(byteString[i]);
+                    }
+                }
+                else
+                {
+                    if (contaEOB)
+                    {
+                        if (cntEOB == EOD)
+                        {
+                            dict = new byte[currentBytes.Count - EOD];
+                            for (int k = 0; k < dict.Length; k++)
+                                dict[k] = (byte)currentBytes[k];
+                            currentBytes.Clear();
+                            // fine dict ed inizio dictNewChars
+                            currentBytes.Add(byteString[i]);
+                            contaEOB = false;
+                            cntEOB = 0;
+                        }
+                        else if (cntEOB == EOS)
+                        {
+                            dictNewChars = new byte[currentBytes.Count - EOS];
+                            for (int k = 0; k < dictNewChars.Length; k++)
+                                dict[k] = (byte)currentBytes[k];
+                            contaEOB = false;
+                            cntEOB = 0;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        currentBytes.Add(byteString[i]);
+                    }
+                }
+            }
+            return Tuple.Create(dict, dictNewChars);
         }
 
         public byte[] getDictByteEncoding(List<int[]> dict)
@@ -518,7 +570,7 @@ namespace JPEGWatermarking
                 for(int i=0; i<v.Length; i++)
                     for (int j=0; j<numR; j++)
                     {
-                        enc[i * 3 + j] = v[i];
+                        enc[i * numR + j] = v[i];
                     }
                 return enc;
             }

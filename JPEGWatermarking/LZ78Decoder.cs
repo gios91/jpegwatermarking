@@ -8,7 +8,7 @@ namespace LZ78Encoding
 {
     class LZ78Decoder : LZ78DecoderIF
     {
-        public string getDecoding(Dictionary<int, string> dictChars, List<int[]> dict)
+        public string getDecoding(List<int[]> dict, Dictionary<int, string> dictChars)
         {
             Dictionary<int,string> dictDec = new Dictionary<int,string>();
             string decoded = string.Empty;

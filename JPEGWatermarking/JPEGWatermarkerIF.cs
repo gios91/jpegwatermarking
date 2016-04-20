@@ -13,15 +13,18 @@ namespace JPEGWatermarking
         */
         Tuple<byte[,], byte[,], byte[,]> doRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, byte[] byteString);
 
+        //decodifica watermarking
         byte[] getRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, int EOS);     //EOS è il numero di bit da estrarre
         
-        byte[] decodeWatermarkingString(byte[] byteString, int EOD, int EOS);
+        Tuple<byte[],byte[]> decodeWatermarkingString(byte[] byteString, int EOD, int EOS);
 
         Tuple<byte[],int,int> createWatermarkingString(byte[] dict, byte[] dictNewChars);
 
         byte[] getDictByteEncoding(List<int[]> dict);
 
         byte[] getDictNewCharsByteEncoding(Dictionary<int, string> dictNewChars);
+
+        //dict decoding
 
         List<int[]> getDictByteDecoding(byte[] dict);
 

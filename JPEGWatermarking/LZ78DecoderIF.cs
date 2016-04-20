@@ -6,7 +6,7 @@ namespace LZ78Encoding
 {
     public interface LZ78DecoderIF
     {
-        string getDecoding(Dictionary<int, string> dictChars, List<int[]> dict);
+        string getDecoding(List<int[]> dict, Dictionary<int, string> dictChars);
 
         /*
         //TODO

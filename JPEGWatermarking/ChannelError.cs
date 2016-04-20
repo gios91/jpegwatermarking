@@ -17,18 +17,13 @@ namespace JPEGWatermarking
                 res[k] = stream[k];
             //in base al valore di alpha, altera i bit all'interno di stream
             int numError = Convert.ToInt32(alpha * stream.Length);
-            
-            Console.WriteLine("num errori = {0}", numError);
-
             for (int i=0; i<numError; i++)
             {
-                int randomPos = new Random((stream.Length - 1)).Next();
+                int randomPos = new Random().Next(0, (stream.Length - 1));
                 while (posError.Contains(randomPos))
                 {
-                    randomPos = new Random(stream.Length - 1).Next();
+                    randomPos = new Random().Next(0, (stream.Length - 1));
                 }
-                Console.WriteLine("random pos = {0}", randomPos);
-
                 if (res[randomPos]) res[randomPos] = false;
                 else res[randomPos] = true;
                 posError.Add(randomPos);
@@ -36,6 +31,7 @@ namespace JPEGWatermarking
             return res;
         }
 
+        /*
         public static void Main(string[] args)
         {
             ChannelEncoderIF enc = new ChannelEncoder();
@@ -44,20 +40,28 @@ namespace JPEGWatermarking
 
             byte[] test = { 17, 255 };
             //BitArray testArray = new BitArray(test);
-            BitArray coded = enc.RipetizioneEncoding(test, 3);
-            BitArray errorArray = err.singleError(coded, 0.1);
+            BitArray coded = enc.RipetizioneEncoding(test, 5);
+            BitArray errorArray = err.singleError(coded, 0.01);
             int numError = getNumError(coded, errorArray);
-            BitArray decoded = dec.RipetizioneDecoding(errorArray, 3);
-
+            BitArray decoded = dec.RipetizioneDecoding(errorArray, 5);
+            BitArray testArray = new BitArray(test);
+            bool equals = equalArray(testArray, decoded);
+            Console.Write("coded e decoded sono uguali? {0}",equals);
         }
-
+        */
         private static int getNumError(BitArray v1, BitArray v2)
         {
             int cnt = 0;
             for (int i = 0; i < v1.Length; i++)
-                if (v1[1] != v2[i]) cnt++;
+                if (v1[i] != v2[i]) cnt++;
             return cnt;
         }
 
+        private static bool equalArray(BitArray v1, BitArray v2)
+        {
+            for (int i = 0; i < v1.Length; i++)
+                if (v1[i] != v2[i]) return false;
+            return true;
+        }
     }
 }
