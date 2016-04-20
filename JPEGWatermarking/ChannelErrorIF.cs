@@ -9,6 +9,6 @@ namespace JPEGWatermarking
 {
     public interface ChannerErrorIF
     {
-        public void singleError(ref BitArray stream, double alpha);
+        BitArray singleError(BitArray stream, double alpha);
     }
 }

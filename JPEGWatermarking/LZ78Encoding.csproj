@@ -97,6 +97,7 @@
     <Compile Include="ChannelError.cs" />
     <Compile Include="ChannelEncoder.cs" />
     <Compile Include="ChannelDecoder.cs" />
+    <Compile Include="ChannelErrorIF.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="JPEGDecoder.cs" />
     <Compile Include="JPEGDecoderIF.cs" />
