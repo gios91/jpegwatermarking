@@ -14,15 +14,36 @@ namespace JPEGWatermarking
         /*
         public static void Main(string[] args)
         {
-            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\stringhelz78\\riga.txt";
+            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\stringhelz78\\testnew.txt";
             string s = leggiDaFile(path);
             Console.WriteLine(s);
             LZ78EncoderIF enc = new LZ78Encoder();
-            Tuple<Dictionary<string, int[]>, Dictionary<int, string>> result = enc.getEncoding(s);
+            LZ78DecoderIF dec = new LZ78Decoder();
+            Tuple<Dictionary<string, Int16[]>, string[]> result = enc.getCompactEncoding(s);
             JPEGWatermarkerIF wm = new JPEGWatermarker();
 
-            Dictionary<string, int[]> dict = result.Item1;
-            Dictionary<int, string> dictNewChars = result.Item2;
+            Dictionary<string, Int16[]> dict = result.Item1;
+            string[] dictNewChars = result.Item2;
+
+            List<Int16[]> dictArray = new List<Int16[]>();
+            Dictionary<string, Int16[]>.KeyCollection keys = dict.Keys;
+            foreach (string k1 in keys)
+            {
+                Int16[] row = new Int16[2];
+                row[0] = dict[k1][1];
+                row[1] = dict[k1][2];
+                dictArray.Add(row);
+                Console.WriteLine(k1 + ", [" + dict[k1][0] + "," + dict[k1][1] + "," + dict[k1][2] + "]");
+            }
+            for (int i = 0; i < dictNewChars.Length; i++)
+                Console.WriteLine("[" + i + "," + dictNewChars[i] + "]");
+
+            string text = dec.getCompactDecoding(dictArray, dictNewChars);
+            Console.WriteLine("decoded string : {0}", text);
+
+        }
+            /*
+
 
             //test serializzazione
             BinaryFormatter bf = new BinaryFormatter();

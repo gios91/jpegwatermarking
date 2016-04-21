@@ -13,8 +13,13 @@ namespace JPEGWatermarking
         */
         Tuple<byte[,], byte[,], byte[,]> doRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, byte[] byteString);
 
+        Tuple<byte[,], byte[,], byte[,], int> doAdvancedRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, byte[] byteString);      //level è in max num di LSB utilizzati per px
+
         //decodifica watermarking
-        byte[] getRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, int EOS);     //EOS è il numero di bit da estrarre
+
+        byte[] getRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, int EOS);     //EOS è il marcatore di fine watermarking
+
+        byte[] getAdvancedRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, int EOS, int level);     //EOS è il marcatore di fine watermarking; level è in max num di LSB utilizzati per px
         
         Tuple<byte[],byte[]> decodeWatermarkingString(byte[] byteString, int EOD, int EOS);
 
@@ -29,6 +34,10 @@ namespace JPEGWatermarking
         List<int[]> getDictByteDecoding(byte[] dict);
 
         Dictionary<int, string> getDictNewCharsByteDecoding(byte[] dictNewChars);
-        
+
+        List<Int16[]> getDictByteCompactDecoding(byte[] dict);
+
+        string[] getDictNewCharsByteCompactDecoding(byte[] dictNewChars);
+
     }
 }
