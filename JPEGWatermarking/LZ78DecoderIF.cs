@@ -10,6 +10,8 @@ namespace LZ78Encoding
 
         string getCompactDecoding(List<Int16[]> dict, string[] dictChars);
 
+
+
         /*
         //TODO
         Tuple<Dictionary<int, string>, List<int[]>> getEncodingFromByteArray(byte[] encoding);

@@ -64,6 +64,85 @@ namespace JPEGWatermarking
         }//doRGBWatermarking
 
 
+        public Tuple<byte[,], byte[,], byte[,]> doLuminanceRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, byte[] byteString, List<int[]> blockSequence, int numLSBSelectedBlock, int numLSBNonSelectedBlock)
+        {
+            BitBinaryWriter bbw = new BitBinaryWriter(byteString);      //memorizzo l'array di byte in BitWriter per scansione bit a bit
+            bool isPossibleToInsertWater = getLuminanceRGBNumBitRequired(R, byteString, blockSequence.Count, numLSBSelectedBlock, numLSBNonSelectedBlock);
+            if (!isPossibleToInsertWater)
+                throw new Exception("Non è possibile inserire il watermarking: dimensioni maggiori dei bit disponibili");
+            int rows = R.GetLength(0);
+            int columns = R.GetLength(1);
+            byte[,] RNew = new byte[rows, columns];
+            byte[,] GNew = new byte[rows, columns];
+            byte[,] BNew = new byte[rows, columns];
+            for (int i = 0; i < rows; i += 8)
+                for (int j = 0; j < columns; j += 8)
+                {
+                    int[] rowCol = new int[2];
+                    rowCol[0] = i; rowCol[1] = j;
+                    if (isContained(blockSequence, rowCol))
+                    {   //inserire il watermarking nei blocchi selezionati
+                        switch (numLSBSelectedBlock)
+                        {
+                            case 1:
+                                rgbWatermarkingLevel1Block(R, G, B, ref RNew, ref GNew, ref BNew, i, j, byteString, ref bbw);
+                                break;
+                            case 2:
+                                rgbWatermarkingLevel2Block(R, G, B, ref RNew, ref GNew, ref BNew, i, j, byteString, ref bbw);
+                                break;
+                            case 3:
+                                rgbWatermarkingLevel3Block(R, G, B, ref RNew, ref GNew, ref BNew, i, j, byteString, ref bbw);
+                                break;
+                            case 4:
+                                rgbWatermarkingLevel4Block(R, G, B, ref RNew, ref GNew, ref BNew, i, j, byteString, ref bbw);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch (numLSBNonSelectedBlock)
+                        {
+                            case 1:
+                                rgbWatermarkingLevel1Block(R, G, B, ref RNew, ref GNew, ref BNew, i, j, byteString, ref bbw);
+                                break;
+                            case 2:
+                                rgbWatermarkingLevel2Block(R, G, B, ref RNew, ref GNew, ref BNew, i, j, byteString, ref bbw);
+                                break;
+                            case 3:
+                                rgbWatermarkingLevel3Block(R, G, B, ref RNew, ref GNew, ref BNew, i, j, byteString, ref bbw);
+                                break;
+                            case 4:
+                                rgbWatermarkingLevel4Block(R, G, B, ref RNew, ref GNew, ref BNew, i, j, byteString, ref bbw);
+                                break;
+                        }
+                    }
+                }
+            return Tuple.Create(RNew, GNew, BNew);
+        }
+
+        private bool getLuminanceRGBNumBitRequired(byte[,] M, byte[] byteString, int numSelectedBlock, int numLSBSelectedBlock, int numLSBNonSelectedBlock)
+        {
+            int numBlock = (M.GetLength(0) * M.GetLength(1)) / 64;
+            int numNonSelectedBlock = numBlock - numSelectedBlock;
+            int numBitsAvailable = (64 * (numLSBSelectedBlock * 3) * numSelectedBlock) + (64 * (numLSBNonSelectedBlock * 3) * numNonSelectedBlock);
+
+            Console.WriteLine("[++++++ TEST +++++++] num bit da scrivere = {0}", byteString.Length * 8);
+            Console.WriteLine("[++++++ TEST +++++++] num bit disponibili = {0}", numBitsAvailable);
+
+            if (byteString.Length * 8 > numBitsAvailable)
+                return false;
+            return true;
+
+        }
+
+        private bool isContained(List<int[]> blockSequence, int[] colRow)
+        {
+            foreach (int[] idx in blockSequence)
+                if (idx[0] == colRow[0] && idx[1] == colRow[1])
+                    return true;
+            return false;
+        }
+
         public Tuple<byte[,], byte[,], byte[,], int> doAdvancedRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, byte[] byteString)
         {
             /*
@@ -128,6 +207,38 @@ namespace JPEGWatermarking
                 }
         }
 
+        private void rgbWatermarkingLevel1Block(byte[,] R, byte[,] G, byte[,] B, ref byte[,] RNew, ref byte[,] GNew, ref byte[,] BNew, int x, int y, byte[] byteString, ref BitBinaryWriter bbw)
+        {
+            int rows = R.GetLength(0);
+            int columns = R.GetLength(1);
+            for (int i = x; i < x+8 ; i++)
+                for (int j = y; j < y+8 ; j++)
+                {
+                    if (bbw.getNumBitsRemaining() >= 3)
+                    {
+                        RNew[i, j] = bbw.changeLSB(R[i, j]);
+                        GNew[i, j] = bbw.changeLSB(G[i, j]);
+                        BNew[i, j] = bbw.changeLSB(B[i, j]);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 2)
+                    {
+                        RNew[i, j] = bbw.changeLSB(R[i, j]);
+                        GNew[i, j] = bbw.changeLSB(G[i, j]);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 1)
+                    {
+                        RNew[i, j] = bbw.changeLSB(R[i, j]);
+                    }
+                    else
+                    {
+                        RNew[i, j] = R[i, j];
+                        GNew[i, j] = G[i, j];
+                        BNew[i, j] = B[i, j];
+                    }
+                }
+        }
+
+
         private void rgbWatermarkingLevel2(byte[,] R, byte[,] G, byte[,] B, ref byte[,] RNew, ref byte[,] GNew, ref byte[,] BNew, byte[] byteString, BitBinaryWriter bbw)
         {
             int rows = R.GetLength(0);
@@ -183,12 +294,155 @@ namespace JPEGWatermarking
                 }
         }
 
+        private void rgbWatermarkingLevel2Block(byte[,] R, byte[,] G, byte[,] B, ref byte[,] RNew, ref byte[,] GNew, ref byte[,] BNew, int x, int y, byte[] byteString, ref BitBinaryWriter bbw)
+        {
+            int rows = R.GetLength(0);
+            int columns = R.GetLength(1);
+            for (int i = x; i < x+8; i++)
+                for (int j = y; j < y+8; j++)
+                {
+                    if (bbw.getNumBitsRemaining() >= 6)
+                    {
+                        byte RTemp = bbw.changeLSB(R[i, j], 0);
+                        RNew[i, j] = bbw.changeLSB(RTemp, 1);
+                        byte GTemp = bbw.changeLSB(G[i, j], 0);
+                        GNew[i, j] = bbw.changeLSB(GTemp, 1);
+                        byte BTemp = bbw.changeLSB(B[i, j], 0);
+                        BNew[i, j] = bbw.changeLSB(BTemp, 1);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 5)
+                    {
+                        byte RTemp = bbw.changeLSB(R[i, j], 0);
+                        RNew[i, j] = bbw.changeLSB(RTemp, 1);
+                        byte GTemp = bbw.changeLSB(G[i, j], 0);
+                        GNew[i, j] = bbw.changeLSB(GTemp, 1);
+                        BNew[i, j] = bbw.changeLSB(B[i, j], 0);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 4)
+                    {
+                        byte RTemp = bbw.changeLSB(R[i, j], 0);
+                        RNew[i, j] = bbw.changeLSB(RTemp, 1);
+                        byte GTemp = bbw.changeLSB(G[i, j], 0);
+                        GNew[i, j] = bbw.changeLSB(GTemp, 1);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 3)
+                    {
+                        byte RTemp = bbw.changeLSB(R[i, j], 0);
+                        RNew[i, j] = bbw.changeLSB(RTemp, 1);
+                        GNew[i, j] = bbw.changeLSB(G[i, j], 0);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 2)
+                    {
+                        byte RTemp = bbw.changeLSB(R[i, j], 0);
+                        RNew[i, j] = bbw.changeLSB(RTemp, 1);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 1)
+                    {
+                        RNew[i, j] = bbw.changeLSB(R[i, j], 0);
+                    }
+                    else
+                    {
+                        RNew[i, j] = R[i, j];
+                        GNew[i, j] = G[i, j];
+                        BNew[i, j] = B[i, j];
+                    }
+                }
+        }
+
         private void rgbWatermarkingLevel3(byte[,] R, byte[,] G, byte[,] B, ref byte[,] RNew, ref byte[,] GNew, ref byte[,] BNew, byte[] byteString, BitBinaryWriter bbw)
         {
             int rows = R.GetLength(0);
             int columns = R.GetLength(1);
             for (int i = 0; i < rows; i++)
                 for (int j = 0; j < columns; j++)
+                {
+                    if (bbw.getNumBitsRemaining() >= 9)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        RNew[i, j] = bbw.changeLSB(RTemp2, 2);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        GNew[i, j] = bbw.changeLSB(GTemp2, 2);
+                        byte BTemp1 = bbw.changeLSB(B[i, j], 0);
+                        byte BTemp2 = bbw.changeLSB(BTemp1, 1);
+                        BNew[i, j] = bbw.changeLSB(BTemp2, 2);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 8)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        RNew[i, j] = bbw.changeLSB(RTemp2, 2);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        GNew[i, j] = bbw.changeLSB(GTemp2, 2);
+                        byte BTemp1 = bbw.changeLSB(B[i, j], 0);
+                        BNew[i, j] = bbw.changeLSB(BTemp1, 1);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 7)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        RNew[i, j] = bbw.changeLSB(RTemp2, 2);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        GNew[i, j] = bbw.changeLSB(GTemp2, 2);
+                        BNew[i, j] = bbw.changeLSB(B[i, j], 0);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 6)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        RNew[i, j] = bbw.changeLSB(RTemp2, 2);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        GNew[i, j] = bbw.changeLSB(GTemp2, 2);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 5)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        RNew[i, j] = bbw.changeLSB(RTemp2, 2);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        GNew[i, j] = bbw.changeLSB(GTemp1, 1);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 4)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        RNew[i, j] = bbw.changeLSB(RTemp2, 2);
+                        GNew[i, j] = bbw.changeLSB(G[i, j], 0);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 3)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        RNew[i, j] = bbw.changeLSB(RTemp2, 2);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 2)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        RNew[i, j] = bbw.changeLSB(RTemp1, 1);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 1)
+                    {
+                        RNew[i, j] = bbw.changeLSB(R[i, j], 0);
+                    }
+                    else
+                    {
+                        RNew[i, j] = R[i, j];
+                        GNew[i, j] = G[i, j];
+                        BNew[i, j] = B[i, j];
+                    }
+                }
+        }
+
+        private void rgbWatermarkingLevel3Block(byte[,] R, byte[,] G, byte[,] B, ref byte[,] RNew, ref byte[,] GNew, ref byte[,] BNew, int x, int y, byte[] byteString, ref BitBinaryWriter bbw)
+        {
+            int rows = R.GetLength(0);
+            int columns = R.GetLength(1);
+            for (int i = x; i < x+8; i++)
+                for (int j = y; j < y+8; j++)
                 {
                     if (bbw.getNumBitsRemaining() >= 9)
                     {
@@ -401,6 +655,137 @@ namespace JPEGWatermarking
                 }
         }
 
+        private void rgbWatermarkingLevel4Block(byte[,] R, byte[,] G, byte[,] B, ref byte[,] RNew, ref byte[,] GNew, ref byte[,] BNew, int x, int y, byte[] byteString, ref BitBinaryWriter bbw)
+        {
+            int rows = R.GetLength(0);
+            int columns = R.GetLength(1);
+            for (int i = x; i < x+8; i++)
+                for (int j = y; j < y+8; j++)
+                {
+                    if (bbw.getNumBitsRemaining() >= 12)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        byte RTemp3 = bbw.changeLSB(RTemp2, 2);
+                        RNew[i, j] = bbw.changeLSB(RTemp3, 3);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        byte GTemp3 = bbw.changeLSB(GTemp2, 2);
+                        GNew[i, j] = bbw.changeLSB(GTemp3, 3);
+                        byte BTemp1 = bbw.changeLSB(B[i, j], 0);
+                        byte BTemp2 = bbw.changeLSB(BTemp1, 1);
+                        byte BTemp3 = bbw.changeLSB(BTemp2, 2);
+                        BNew[i, j] = bbw.changeLSB(BTemp3, 3);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 11)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        byte RTemp3 = bbw.changeLSB(RTemp2, 2);
+                        RNew[i, j] = bbw.changeLSB(RTemp3, 3);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        byte GTemp3 = bbw.changeLSB(GTemp2, 2);
+                        GNew[i, j] = bbw.changeLSB(GTemp3, 3);
+                        byte BTemp1 = bbw.changeLSB(B[i, j], 0);
+                        byte BTemp2 = bbw.changeLSB(BTemp1, 1);
+                        BNew[i, j] = bbw.changeLSB(BTemp2, 2);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 10)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        byte RTemp3 = bbw.changeLSB(RTemp2, 2);
+                        RNew[i, j] = bbw.changeLSB(RTemp3, 3);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        byte GTemp3 = bbw.changeLSB(GTemp2, 2);
+                        GNew[i, j] = bbw.changeLSB(GTemp3, 3);
+                        byte BTemp1 = bbw.changeLSB(B[i, j], 0);
+                        BNew[i, j] = bbw.changeLSB(BTemp1, 1);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 9)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        byte RTemp3 = bbw.changeLSB(RTemp2, 2);
+                        RNew[i, j] = bbw.changeLSB(RTemp3, 3);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        byte GTemp3 = bbw.changeLSB(GTemp2, 2);
+                        GNew[i, j] = bbw.changeLSB(GTemp3, 3);
+                        BNew[i, j] = bbw.changeLSB(B[i, j], 0);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 8)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        byte RTemp3 = bbw.changeLSB(RTemp2, 2);
+                        RNew[i, j] = bbw.changeLSB(RTemp3, 3);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        byte GTemp3 = bbw.changeLSB(GTemp2, 2);
+                        GNew[i, j] = bbw.changeLSB(GTemp3, 3);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 7)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        byte RTemp3 = bbw.changeLSB(RTemp2, 2);
+                        RNew[i, j] = bbw.changeLSB(RTemp3, 3);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        byte GTemp2 = bbw.changeLSB(GTemp1, 1);
+                        GNew[i, j] = bbw.changeLSB(GTemp2, 2);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 6)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        byte RTemp3 = bbw.changeLSB(RTemp2, 2);
+                        RNew[i, j] = bbw.changeLSB(RTemp3, 3);
+                        byte GTemp1 = bbw.changeLSB(G[i, j], 0);
+                        GNew[i, j] = bbw.changeLSB(GTemp1, 1);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 5)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        byte RTemp3 = bbw.changeLSB(RTemp2, 2);
+                        RNew[i, j] = bbw.changeLSB(RTemp3, 3);
+                        GNew[i, j] = bbw.changeLSB(G[i, j], 0);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 4)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        byte RTemp3 = bbw.changeLSB(RTemp2, 2);
+                        RNew[i, j] = bbw.changeLSB(RTemp3, 3);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 3)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        byte RTemp2 = bbw.changeLSB(RTemp1, 1);
+                        RNew[i, j] = bbw.changeLSB(RTemp2, 2);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 2)
+                    {
+                        byte RTemp1 = bbw.changeLSB(R[i, j], 0);
+                        RNew[i, j] = bbw.changeLSB(RTemp1, 1);
+                    }
+                    else if (bbw.getNumBitsRemaining() == 1)
+                    {
+                        RNew[i, j] = bbw.changeLSB(R[i, j], 0);
+                    }
+                    else
+                    {
+                        RNew[i, j] = R[i, j];
+                        GNew[i, j] = G[i, j];
+                        BNew[i, j] = B[i, j];
+                    }
+                }
+        }
+
+
         private int getLevelRequired(byte[,] RMatrix, byte[] byteString)
         {
             int rows = RMatrix.GetLength(0);
@@ -554,12 +939,108 @@ namespace JPEGWatermarking
             return result;
         }
 
+        public byte[] getLuminanceRGBWatermarking(byte[,] R, byte[,] G, byte[,] B, int EOS, List<int[]> blockSequence, int numLSBSelectedBlock, int numLSBNonSelectedBlock)
+        {
+            BitBinaryWriter bbw = new BitBinaryWriter();      //memorizzo l'array di byte in BitWriter per scansione bit a bit
+            int[] numLSBForLevel = { 0, 3, 6, 9, 12 };
+            int rows = R.GetLength(0);
+            int columns = R.GetLength(1);
+            bool[] temp = new bool[rows * columns * numLSBForLevel[numLSBSelectedBlock]]; //massima dimensione dei dati memorizzabile nell'immagine (in bit)
+            int cntTemp = 0;
+            for (int i = 0; i < rows; i += 8)
+                for (int j = 0; j < columns; j += 8)
+                {
+                    int[] rowCol = new int[2];
+                    rowCol[0] = i; rowCol[1] = j;
+                    if (isContained(blockSequence,rowCol))
+                    {   //inserire il watermarking nei blocchi selezionati
+                        if (numLSBSelectedBlock == 1)
+                            getRGBWatermarkingLevel1Block(R, G, B, ref temp, ref cntTemp, i, j, ref bbw);
+                        else if (numLSBSelectedBlock == 2)
+                            getRGBWatermarkingLevel2Block(R, G, B, ref temp, ref cntTemp, i, j, ref bbw);
+                        else if (numLSBSelectedBlock == 3)
+                            getRGBWatermarkingLevel3Block(R, G, B, ref temp, ref cntTemp, i, j, ref bbw);
+                        else if (numLSBSelectedBlock == 4)
+                            getRGBWatermarkingLevel4Block(R, G, B, ref temp, ref cntTemp, i, j, ref bbw);
+                    }
+                    else
+                    {
+                        if (numLSBNonSelectedBlock == 1)
+                            getRGBWatermarkingLevel1Block(R, G, B, ref temp, ref cntTemp, i, j, ref bbw);
+                        else if (numLSBNonSelectedBlock == 2)
+                            getRGBWatermarkingLevel2Block(R, G, B, ref temp, ref cntTemp, i, j, ref bbw);
+                        else if (numLSBNonSelectedBlock == 3)
+                            getRGBWatermarkingLevel3Block(R, G, B, ref temp, ref cntTemp, i, j, ref bbw);
+                        else if (numLSBNonSelectedBlock == 4)
+                            getRGBWatermarkingLevel4Block(R, G, B, ref temp, ref cntTemp, i, j, ref bbw);
+                    }
+                }
+            byte[] v = bbw.getByteArray(temp);
+            int numElem = 0;
+            int cntEOB = 0;
+            bool contaEOB = false;
+            for (int k = 0; k < v.Length; k++)
+            {
+                if (v[k] == EOB)
+                {
+                    if (!contaEOB)
+                    {
+                        cntEOB++;
+                        contaEOB = true;
+                        numElem++;
+                    }
+                    else if (contaEOB)
+                    {
+                        cntEOB++;
+                        numElem++;
+                    }
+                }
+                else
+                {
+                    if (contaEOB)
+                    {
+                        if (cntEOB == EOS)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            contaEOB = false;
+                            cntEOB = 0;
+                            numElem++;
+                        }
+                    }
+                    else
+                    {
+                        numElem++;
+                    }
+                }
+            }
+            byte[] result = new byte[numElem];
+            for (int w = 0; w < numElem; w++)
+                result[w] = v[w];
+            return result;
+        }
+        
+
         private void getRGBWatermarkingLevel1(byte[,] R, byte[,] G, byte[,] B, ref bool[] temp, ref int cntTemp, ref BitBinaryWriter bbw)
         {
             int rows = R.GetLength(0);
             int columns = R.GetLength(1);
             for (int i = 0; i < rows; i++)
                 for (int j = 0; j < columns; j++)
+                {
+                    temp[cntTemp] = bbw.getLSB(R[i, j]);
+                    temp[cntTemp + 1] = bbw.getLSB(G[i, j]);
+                    temp[cntTemp + 2] = bbw.getLSB(B[i, j]);
+                    cntTemp += 3;
+                }
+        }
+
+        private void getRGBWatermarkingLevel1Block(byte[,] R, byte[,] G, byte[,] B, ref bool[] temp, ref int cntTemp, int x, int y, ref BitBinaryWriter bbw)
+        {
+            for (int i = x; i < x + 8; i++)
+                for (int j = y; j < y + 8; j++)
                 {
                     temp[cntTemp] = bbw.getLSB(R[i, j]);
                     temp[cntTemp + 1] = bbw.getLSB(G[i, j]);
@@ -585,12 +1066,45 @@ namespace JPEGWatermarking
                 }
         }
 
+        private void getRGBWatermarkingLevel2Block(byte[,] R, byte[,] G, byte[,] B, ref bool[] temp, ref int cntTemp, int x, int y, ref BitBinaryWriter bbw)
+        {
+            for (int i = x; i < x+8; i++)
+                for (int j = y; j < y+8; j++)
+                {
+                    temp[cntTemp] = bbw.getLSB(R[i, j], 0);
+                    temp[cntTemp + 1] = bbw.getLSB(R[i, j], 1);
+                    temp[cntTemp + 2] = bbw.getLSB(G[i, j], 0);
+                    temp[cntTemp + 3] = bbw.getLSB(G[i, j], 1);
+                    temp[cntTemp + 4] = bbw.getLSB(B[i, j], 0);
+                    temp[cntTemp + 5] = bbw.getLSB(B[i, j], 1);
+                    cntTemp += 6;
+                }
+        }
+
         private void getRGBWatermarkingLevel3(byte[,] R, byte[,] G, byte[,] B, ref bool[] temp, ref int cntTemp, ref BitBinaryWriter bbw)
         {
             int rows = R.GetLength(0);
             int columns = R.GetLength(1);
             for (int i = 0; i < rows; i++)
                 for (int j = 0; j < columns; j++)
+                {
+                    temp[cntTemp] = bbw.getLSB(R[i, j], 0);
+                    temp[cntTemp + 1] = bbw.getLSB(R[i, j], 1);
+                    temp[cntTemp + 2] = bbw.getLSB(R[i, j], 2);
+                    temp[cntTemp + 3] = bbw.getLSB(G[i, j], 0);
+                    temp[cntTemp + 4] = bbw.getLSB(G[i, j], 1);
+                    temp[cntTemp + 5] = bbw.getLSB(G[i, j], 2);
+                    temp[cntTemp + 6] = bbw.getLSB(B[i, j], 0);
+                    temp[cntTemp + 7] = bbw.getLSB(B[i, j], 1);
+                    temp[cntTemp + 8] = bbw.getLSB(B[i, j], 2);
+                    cntTemp += 9;
+                }
+        }
+
+        private void getRGBWatermarkingLevel3Block(byte[,] R, byte[,] G, byte[,] B, ref bool[] temp, ref int cntTemp, int x, int y, ref BitBinaryWriter bbw)
+        {
+            for (int i = x; i < x+8; i++)
+                for (int j = y; j < y+8; j++)
                 {
                     temp[cntTemp] = bbw.getLSB(R[i, j], 0);
                     temp[cntTemp + 1] = bbw.getLSB(R[i, j], 1);
@@ -627,6 +1141,28 @@ namespace JPEGWatermarking
                     cntTemp += 12;
                 }
         }
+
+        private void getRGBWatermarkingLevel4Block(byte[,] R, byte[,] G, byte[,] B, ref bool[] temp, ref int cntTemp, int x, int y, ref BitBinaryWriter bbw)
+        {
+            for (int i = x; i < x+8; i++)
+                for (int j = y; j < y+8; j++)
+                {
+                    temp[cntTemp] = bbw.getLSB(R[i, j], 0);
+                    temp[cntTemp + 1] = bbw.getLSB(R[i, j], 1);
+                    temp[cntTemp + 2] = bbw.getLSB(R[i, j], 2);
+                    temp[cntTemp + 3] = bbw.getLSB(R[i, j], 3);
+                    temp[cntTemp + 4] = bbw.getLSB(G[i, j], 0);
+                    temp[cntTemp + 5] = bbw.getLSB(G[i, j], 1);
+                    temp[cntTemp + 6] = bbw.getLSB(G[i, j], 2);
+                    temp[cntTemp + 7] = bbw.getLSB(G[i, j], 3);
+                    temp[cntTemp + 8] = bbw.getLSB(B[i, j], 0);
+                    temp[cntTemp + 9] = bbw.getLSB(B[i, j], 1);
+                    temp[cntTemp + 10] = bbw.getLSB(B[i, j], 2);
+                    temp[cntTemp + 11] = bbw.getLSB(B[i, j], 3);
+                    cntTemp += 12;
+                }
+        }
+
 
         public List<int[]> getDictByteDecoding(byte[] dictArray)
         {
@@ -854,6 +1390,58 @@ namespace JPEGWatermarking
             return dictNewCharsArray;
         }
         
+
+        private double getAverageLuminanceValue(float[,] Y, float delta)
+        {
+            int rows = Y.GetLength(0);
+            int columns = Y.GetLength(1);
+            double numPixel = Y.GetLength(0) * Y.GetLength(1);
+            double sumLogY = 0;
+            for (int i=0; i< rows; i++)
+                for (int j=0; j<columns; j++)
+                {
+                    double pixLogValue = Math.Log(Y[i, j] + delta);
+                    sumLogY += pixLogValue;
+                }
+            double avgSumLogY = sumLogY / numPixel;
+            return Math.Exp(avgSumLogY);
+        }
+
+
+        public List<int[]> getBlocksForYWatermarking(float[,] Y, float delta)
+        {
+            int rows = Y.GetLength(0);
+            int columns = Y.GetLength(1);
+            List<int[]> blockSequ = new List<int[]>();
+            double YAvgLuminance = getAverageLuminanceValue(Y, delta);
+            for (int i = 0; i < rows; i += 8)
+                for (int j = 0; j < columns; j += 8)
+                {
+                    //calcolo il valore di Y medio per ogni blocco
+                    float[,] block = copyBlock(Y, i, j);
+                    double blockAvgLuminance = getAverageLuminanceValue(block, delta);
+                    if (blockAvgLuminance >= YAvgLuminance)
+                    {
+                        //il blocco può essere usato per LSBAdvancedWatermarking
+                        int[] rowColIndex = new int[2];
+                        rowColIndex[0] = i; rowColIndex[1] = j;
+                        blockSequ.Add(rowColIndex);
+                    }
+                }
+            return blockSequ;
+        }
+
+        private float[,] copyBlock(float[,] M, int k, int w)
+        {
+            float[,] copyBlock = new float[8, 8];
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                {
+                    copyBlock[i, j] = M[i + k, j + w];
+                }
+            return copyBlock;
+        }
+
         public class BitBinaryWriter : System.IO.BinaryWriter
         {
             private bool[] bitArray;

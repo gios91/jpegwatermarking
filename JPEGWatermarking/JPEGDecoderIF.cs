@@ -16,5 +16,7 @@ namespace JPEGWatermarking
 
         Tuple<byte[,], byte[,], byte[,]> getRGBMatrix(Bitmap b);
 
+        Tuple<float[,], float[,], float[,]> getYCbCrMatrix(byte[,] RMatrix, byte[,] GMatrix, byte[,] BMatrix);
+        
     }
 }
