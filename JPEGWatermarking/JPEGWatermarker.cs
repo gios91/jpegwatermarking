@@ -1714,5 +1714,4 @@ namespace JPEGWatermarking
             }
         } //BitBitBinaryWriter
     }
-
 }

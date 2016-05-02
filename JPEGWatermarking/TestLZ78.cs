@@ -14,7 +14,7 @@ namespace JPEGWatermarking
         /*
         public static void Main(string[] args)
         {
-            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\stringhelz78\\testnew.txt";
+            string path = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\stringhelz78\\primo_canto_ok_12.txt";
             string s = leggiDaFile(path);
             Console.WriteLine(s);
             LZ78EncoderIF enc = new LZ78Encoder();
@@ -40,11 +40,8 @@ namespace JPEGWatermarking
 
             string text = dec.getCompactDecoding(dictArray, dictNewChars);
             Console.WriteLine("decoded string : {0}", text);
-
         }
             /*
-
-
             //test serializzazione
             BinaryFormatter bf = new BinaryFormatter();
             MemoryStream dictStream = new MemoryStream();
@@ -61,7 +58,7 @@ namespace JPEGWatermarking
             byte[] finalStream = wm.getDictFinalStream(dictArray, dictNewCharsArray);
             Console.WriteLine("dict dim = {0}", finalStream.Length);
 
-            /*
+            
             //test deserializzazione 
             MemoryStream dictStreamDes = new MemoryStream();
             MemoryStream dictNewCharsStreamDes = new MemoryStream();
@@ -138,7 +135,6 @@ namespace JPEGWatermarking
 
         public static string leggiDaFile(string path)
         {
-            int numline = 0;
             string s = string.Empty;
             using (var reader = new StreamReader(path))
             {
@@ -146,16 +142,9 @@ namespace JPEGWatermarking
                 while ((line = reader.ReadLine()) != null)
                 {
                     s += line;
-                    numline++;
-                    int x=0;
-                    if (numline == 9) {
-                         x = 0;
-                    }
-                    if (numline == 10)
-                        break;
                 }
             }
-            return s;
+            return Encoding.UTF8.GetString(Encoding.Default.GetBytes(s));
         }
     }
 }
