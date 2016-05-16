@@ -14,24 +14,24 @@ using System.Threading.Tasks;
 
 namespace JPEGWatermarking
 {
-    class ModuleTest
+    class Engine
     {
         private static string inputImagePath;
         private static string outputImagePath;
         private static string outputWatermarkedImagePath;
         private static string inputTextPath;
         private static int numRipetizioni;
-        private static double alphaChError;
+        private static double alphaChError; 
 
         private static FREE_IMAGE_SAVE_FLAGS jpegQuality;
         private static FREE_IMAGE_SAVE_FLAGS chromaSubsamplingType;
-
+        
         private static int EOD;
         private static int EOS;
 
         private static FIBITMAP inputImage = new FIBITMAP();
         private static Bitmap jpegToSerialize;
-
+        
         private static LZ78EncoderIF dictEncoder;
         private static LZ78DecoderIF dictDecoder;
         private static JPEGWatermarkerIF waterEncoder;
@@ -66,8 +66,8 @@ namespace JPEGWatermarking
             List<int[]> blockSeq = waterEncoder.getBlocksForYWatermarking(ycbcr.Item1, delta);
         }
         */
-        
-        
+
+        /*
         public static void Main(string[] args)
         {
             //insertInputImagePath();
@@ -76,10 +76,10 @@ namespace JPEGWatermarking
             insertJpegQuality();
             insertChromaSubsamplingType();
 
-            inputImagePath = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\twitter320x320\\twitter320x320.bmp";
-            outputImagePath = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\twitter320x320\\twitter320x320_jpg.jpg";
-            outputWatermarkedImagePath = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\twitter320x320\\twitter320x320_watermarked.jpg";
-            inputTextPath = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\stringhelz78\\primo_canto_ok_12.txt";
+            inputImagePath = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\blueskyok.bmp";
+            outputImagePath = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\blueskyBAUBAU.jpg";
+            outputWatermarkedImagePath = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\jpegtest\\blueskyBAUBAU_watermarked.jpg";
+            inputTextPath = "C:\\Users\\Giuseppe\\OneDrive\\Documenti\\Progetto_Teoria_Informazione\\stringhelz78\\scemochilegge.txt";
 
             initModules();
             // 1) codifica LZ del testo 
@@ -96,8 +96,8 @@ namespace JPEGWatermarking
             Console.WriteLine("Leggo img da input...");
             readInputImage();
             //test
-            Tuple<byte[,], byte[,], byte[,]> res = jpegDecoder.getRGBMatrixFI(inputImage);
-
+            Tuple<byte[,],byte[,],byte[,]> res = jpegDecoder.getRGBMatrixFI(inputImage);
+           
             // 3) codifica JPEG dell'immagine di input 
             //jpegQuality = FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYGOOD;
             //chromaSubsamplingType = FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_420;
@@ -108,7 +108,7 @@ namespace JPEGWatermarking
             // 4) scrittura watermarking sull rgb del jpeg
 
             Tuple<byte[,], byte[,], byte[,]> res1 = jpegDecoder.getRGBMatrix(jpegToSerialize);
-
+            
             Console.WriteLine("Scrivo watermarking sul JPEG...");
 
             //Tuple<byte[,], byte[,], byte[,], int> rgbWater = writeWatermarkingOnJpegRgb(watermarking);
@@ -127,7 +127,7 @@ namespace JPEGWatermarking
             Console.WriteLine("[Info] bit disponibili per watermarking = {0} bit", numAvailableBitImage);
 
             Console.WriteLine("Leggo img da input...");
-            setWatermarkedRGBToJpeg(RMatrixWater, GMatrixWater, BMatrixWater);
+            setWatermarkedRGBToJpeg(RMatrixWater,GMatrixWater,BMatrixWater);
 
             Console.WriteLine("Scrivo JPEG watermarked su file...");
             writeWatermarkedJpeg();
@@ -139,14 +139,14 @@ namespace JPEGWatermarking
             // 6) codifica di canale sullo stream
             //insertNumRipetizioni();
 
-            numRipetizioni = 5;
-            alphaChError = 0.005;
-
-            Console.WriteLine("Codifico con R({0},1) per trasmissione su canale...", numRipetizioni);
+            numRipetizioni = 3;
+            alphaChError = 0.001;
+            
+            Console.WriteLine("Codifico con R({0},1) per trasmissione su canale...",numRipetizioni);
             BitArray channelCodedStream = channelEncoder.RipetizioneEncoding(imageStream, numRipetizioni);
             // 7) simulazione errore di canale
             //insertAlphaChannelError();
-
+            
             Console.WriteLine("Applico errore di canale...");
             BitArray receivedNoiseStream = channelError.singleError(channelCodedStream, alphaChError);
             // 8) decodifica bitarray stream sul canale
@@ -155,7 +155,7 @@ namespace JPEGWatermarking
             BitArray decodedStream = channelDecoder.RipetizioneDecoding(receivedNoiseStream, numRipetizioni);
             // 9) decodifica watermarking da RGB
             byte[] decodedStreamArray = bitArrayToByteArray(decodedStream);
-
+            
             Console.WriteLine("Deserializzo il JPEG trasmesso sul canale...");
             Bitmap decodedJpeg = jpegDecoder.deserializeJpegImage(decodedStreamArray);
             Tuple<byte[,], byte[,], byte[,]> rgbDecodedImage = jpegDecoder.getRGBMatrix(decodedJpeg);
@@ -168,25 +168,22 @@ namespace JPEGWatermarking
             Console.WriteLine("[ADVWater] Prelevo watermarking da RGB del JPEG trasmesso...");
 
             byte[] decodedWatermarking = waterEncoder.getLuminanceRGBWatermarking(RMatrixDecoded, GMatrixDecoded, BMatrixDecoded, EOS, blockSequence, numLSBSelectedBlock, numLSBNonSelectedBlock);
-
-            bool equalsWater = checkEqualsWatermarking(watermarking, decodedWatermarking);
-            Console.WriteLine("[WaterCheck] Decoded Watermarking uguale al Coded Watermarking? = {0}",equalsWater);
             
             //USATO PER ADVANCED RGB WATER
             //byte[] decodedWatermarking = waterEncoder.getAdvancedRGBWatermarking(RMatrixDecoded, GMatrixDecoded, BMatrixDecoded, EOS, advRGBWatermarkingLevel);
-
+            
             // 10) passaggio dal watermarking al testo
 
             Console.WriteLine("Decodifico il watermarking...");
-            Tuple<byte[], byte[]> dictStream = waterEncoder.decodeWatermarkingString(decodedWatermarking, EOD, EOS);
-
+            Tuple<byte[], byte[]> dictStream = waterEncoder.decodeWatermarkingString(decodedWatermarking,EOD,EOS);
+            
             byte[] dictByte = dictStream.Item1;
             byte[] dictNewCharsByte = dictStream.Item2;
 
             //List<int[]> dict = waterEncoder.getDictByteCompactDecoding(dictByte);
             //Dictionary<int, string> dictNewChars = waterEncoder.getDictNewCharsByteCompactDecoding(dictNewCharsByte);
             //string decodedText = dictDecoder.getDecoding(dict, dictNewChars);
-
+            
 
             List<Int16[]> dict = waterEncoder.getDictByteCompactDecoding(dictByte);
             string[] dictNewChars = waterEncoder.getDictNewCharsByteCompactDecoding(dictNewCharsByte);
@@ -198,17 +195,8 @@ namespace JPEGWatermarking
 
             //Testing sulla qualità dell'immagine watermarked ottenuta
             qualityTesting();
-
-        }
-
-        private static bool checkEqualsWatermarking(byte[] watermarking, byte[] decodedWatermarking)
-        {
-            for (int i=0; i<watermarking.Length; i++)
-                if (watermarking[i] != decodedWatermarking[i])
-                    return false;
-            return true;
-            
-        }
+        } 
+        */
 
         private static void qualityTesting()
         {
@@ -232,7 +220,7 @@ namespace JPEGWatermarking
             float mse = WatermarkingTestUtility.getMSE(YMatrix, YMatrixWater);
             float psnr = WatermarkingTestUtility.getPSNR(mse);
 
-            printResume(mse, psnr);
+            printResume(mse,psnr);
 
         }
 
@@ -284,15 +272,15 @@ namespace JPEGWatermarking
             byte[,] BMatrixJPG = jpegRGB.Item3;
             Tuple<float[,], float[,], float[,]> jpegYcbcr = jpegDecoder.getYCbCrMatrix(RMatrixJPG, GMatrixJPG, BMatrixJPG);
             delta = 1;
-            numLSBSelectedBlock = 3;
+            numLSBSelectedBlock = 2;
             numLSBNonSelectedBlock = 1;
             blockSequence = waterEncoder.getBlocksForYWatermarking(jpegYcbcr.Item1, delta);
             // scrittura watermarking su RGB del JPEG
             //return waterEncoder.doRGBWatermarking(RMatrixJPG, GMatrixJPG, BMatrixJPG, watermarking);
-            Tuple<byte[,], byte[,], byte[,]> advWater = waterEncoder.doLuminanceRGBWatermarking(RMatrixJPG, GMatrixJPG, BMatrixJPG, watermarking, blockSequence, numLSBSelectedBlock, numLSBNonSelectedBlock);
+            Tuple<byte[,], byte[,], byte[,]> advWater = waterEncoder.doLuminanceRGBWatermarking(RMatrixJPG, GMatrixJPG, BMatrixJPG,watermarking,blockSequence,numLSBSelectedBlock,numLSBNonSelectedBlock);
             return advWater;
         }
-
+        
         /*
         // VA BENE PER TECNICA ADVANCED RGB
         private static Tuple<byte[,], byte[,], byte[,], int> writeWatermarkingOnJpegRgb(byte[] watermarking)
@@ -326,8 +314,8 @@ namespace JPEGWatermarking
                 Image read = Image.FromStream(jpegStream);
                 jpegToSerialize = new Bitmap(read);
             }
-            //inserire eventuale stampa delle matrici e della codifica DC-AC del jpeg
-        }
+                //inserire eventuale stampa delle matrici e della codifica DC-AC del jpeg
+            }
 
         private static void readInputImage()
         {
@@ -347,7 +335,7 @@ namespace JPEGWatermarking
         {
             Console.WriteLine("Inserire il tipo di Chroma Subsampling JPEG desiderato");
             Console.Write("> ");
-            int sub = (int)Console.Read();
+            int sub = (int) Console.Read();
             //aggiungere le altre tipologie di qualità del jpg
             if (sub == 0)
                 chromaSubsamplingType = FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_444;
@@ -357,9 +345,9 @@ namespace JPEGWatermarking
         {
             Console.WriteLine("Inserire qualità della codifica JPEG desiderata");
             Console.Write("> ");
-            int jpegQ = (int)Console.Read();
+            int jpegQ = (int) Console.Read();
             //aggiungere le altre tipologie di qualità del jpg
-            if (jpegQ == 0)
+            if(jpegQ == 0)
                 jpegQuality = FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYSUPERB;
         }
 
@@ -405,11 +393,11 @@ namespace JPEGWatermarking
         {
             Console.WriteLine("Inserire l'errore di canale alpha");
             Console.Write("> ");
-            double alpha = (double)Console.Read();
+            double alpha = (double) Console.Read();
             alphaChError = alpha;
         }
 
-        private static Tuple<byte[], int, int> encodingWatermarkingText()
+        private static Tuple<byte[],int,int> encodingWatermarkingText()
         {
             string toEncode = readFromFile(inputTextPath);
             /*
@@ -441,7 +429,7 @@ namespace JPEGWatermarking
             Console.WriteLine("dict dim = {0}", dictArray.Length);
             Console.WriteLine("dictNewChar dim = {0}", dictNewCharsArray.Length);
             */
-            Tuple<byte[], int, int> waterResult = waterEncoder.createWatermarkingString(dictArray, dictNewCharsArray);
+            Tuple<byte[],int,int> waterResult = waterEncoder.createWatermarkingString(dictArray, dictNewCharsArray);
             //Console.WriteLine("dict dim = {0}", finalStream.Length);
             byte[] finalStream = waterResult.Item1;
             int EOD = waterResult.Item2;
@@ -474,6 +462,6 @@ namespace JPEGWatermarking
             channelDecoder = new ChannelDecoder();
             channelError = new ChannelError();
         }
-
+        
     }
 }

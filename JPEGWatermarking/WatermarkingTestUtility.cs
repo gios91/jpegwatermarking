@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace JPEGWatermarking
 {
-    static class WatermarkingTestUtility
+    public static class WatermarkingTestUtility
     {
         /*
          *   MSE = (1 / N * M) * ( sum i ( sum j ( X[i,j] - Y[i,j] )^2 ) ) , X = Y original image, Y = Y watermarked image

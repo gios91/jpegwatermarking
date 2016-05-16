@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace JPEGWatermarking
 {
-    class JPEGWatermarker : JPEGWatermarkerIF
+    public class JPEGWatermarker : JPEGWatermarkerIF
     {
         public static byte EOB = 255;
         private BinaryFormatter bf = new BinaryFormatter();
@@ -57,7 +57,8 @@ namespace JPEGWatermarking
             }
             else
             {
-                throw new Exception("Non è possibile inserire il dict perché di dimensioni maggiori dell'img");
+                //Non è possibile inserire il dict perché di dimensioni maggiori dell'img
+                return null;
             }
             return Tuple.Create(RNew, GNew, BNew);
 
@@ -69,7 +70,10 @@ namespace JPEGWatermarking
             BitBinaryWriter bbw = new BitBinaryWriter(byteString);      //memorizzo l'array di byte in BitWriter per scansione bit a bit
             bool isPossibleToInsertWater = getLuminanceRGBNumBitRequired(R, byteString, blockSequence.Count, numLSBSelectedBlock, numLSBNonSelectedBlock);
             if (!isPossibleToInsertWater)
-                throw new Exception("Non è possibile inserire il watermarking: dimensioni maggiori dei bit disponibili");
+            {
+                //Non è possibile inserire il watermarking: dimensioni maggiori dei bit disponibili
+                return null;
+            }
             int rows = R.GetLength(0);
             int columns = R.GetLength(1);
             byte[,] RNew = new byte[rows, columns];
@@ -125,14 +129,13 @@ namespace JPEGWatermarking
             int numBlock = (M.GetLength(0) * M.GetLength(1)) / 64;
             int numNonSelectedBlock = numBlock - numSelectedBlock;
             int numBitsAvailable = (64 * (numLSBSelectedBlock * 3) * numSelectedBlock) + (64 * (numLSBNonSelectedBlock * 3) * numNonSelectedBlock);
-
+            /*
             Console.WriteLine("[++++++ TEST +++++++] num bit da scrivere = {0}", byteString.Length * 8);
             Console.WriteLine("[++++++ TEST +++++++] num bit disponibili = {0}", numBitsAvailable);
-
+            */
             if (byteString.Length * 8 > numBitsAvailable)
                 return false;
             return true;
-
         }
 
         private bool isContained(List<int[]> blockSequence, int[] colRow)
@@ -151,7 +154,10 @@ namespace JPEGWatermarking
             BitBinaryWriter bbw = new BitBinaryWriter(byteString);      //memorizzo l'array di byte in BitWriter per scansione bit a bit
             int numLevelRequired = getLevelRequired(R, byteString);
             if (numLevelRequired == -1)
-                throw new Exception("Non è possibile inserire il watermarking: dimensioni maggiori dell'RGB level 4");
+            {
+                //Non è possibile inserire il watermarking: dimensioni maggiori dell'RGB level 4
+                return null;
+            }
             int rows = R.GetLength(0);
             int columns = R.GetLength(1);
             byte[,] RNew = new byte[rows, columns];

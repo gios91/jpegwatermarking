@@ -13,7 +13,7 @@ using System.IO;
 
 namespace JPEGEncoding
 {
-    class JPEGEncoder : JPEGEncoderIF
+    public class JPEGEncoder : JPEGEncoderIF
     {
         private Bitmap b;
         private FIBITMAP fib;

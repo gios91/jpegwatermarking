@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LZ78Encoding
 {
-    class LZ78Decoder : LZ78DecoderIF
+    public class LZ78Decoder : LZ78DecoderIF
     {
         public string getDecoding(List<int[]> dict, Dictionary<int, string> dictChars)
         {

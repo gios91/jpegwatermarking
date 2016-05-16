@@ -1,4 +1,6 @@
-﻿using System;
+﻿using FreeImageAPI;
+using JPEGWatermarking;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace JPEGEncoding
 {
-    class JPEGUtility
+    public class JPEGUtility
     {
         private static bool I = true;
         private static bool O = false;
@@ -26,16 +28,9 @@ namespace JPEGEncoding
         public static int DHT_ID_CbCr = 1;
 
         public static int COMPONENT_Y = 1;
+
         public static int COMPONENT_Cb = 2;
         public static int COMPONENT_Cr = 3;
-
-        
-
-
-
-
-
-
 
         public static Byte[] Category = new Byte[65535];
         public static BitString[] BitCode = new BitString[65535];
@@ -44,6 +39,118 @@ namespace JPEGEncoding
         public static BitString[] Cb_DC_Huffman_Table = new BitString[12];
         public static BitString[] Y_AC_Huffman_Table = new BitString[256];
         public static BitString[] Cb_AC_Huffman_Table = new BitString[256];
+
+        public static FREE_IMAGE_SAVE_FLAGS[] jpegQualityParams = 
+            { FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYBAD, FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYAVERAGE,
+              FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYGOOD, FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYNORMAL,
+              FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYSUPERB
+            };
+
+        public static FREE_IMAGE_SAVE_FLAGS[] jpegChromaSubsamplingParams =
+            { FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_411, FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_420,
+              FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_422, FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_444,
+            };
+
+        public static readonly int ADVANCED_RGB_WATERMARKING = 0;
+        public static readonly int LUMINANCE_RGB_WATERMARKING = 1;
+        
+        public static string[] getJpegQualityParamsStringItems()
+        {
+            string[] jpegQualityParamsString = new string[jpegQualityParams.Length];
+            for (int i = 0; i < jpegQualityParams.Length; i++)
+                jpegQualityParamsString[i] = qualityParamToString(jpegQualityParams[i]);
+            return jpegQualityParamsString;
+        }
+        
+        public static string[] getJpegChromaSubParamsStringItems()
+        {
+            string[] jpegChromaSubParamsString = new string[jpegChromaSubsamplingParams.Length];
+            for (int i = 0; i < jpegChromaSubsamplingParams.Length; i++)
+                jpegChromaSubParamsString[i] = chromaSubParamToString(jpegChromaSubsamplingParams[i]);
+            return jpegChromaSubParamsString;
+        }
+
+        public static string[] getWatermarkingMethodsItems()
+        {
+            string[] watermarkingMethodsItems = new string[2];
+            watermarkingMethodsItems[0] = waterMethodToString(Workflow.ADVANCED_RGB_WATERMARKING);
+            watermarkingMethodsItems[1] = waterMethodToString(Workflow.LUMINANCE_RGB_WATERMARKING);
+            return watermarkingMethodsItems;
+        }
+
+        public static string waterMethodToString(int watermarkingMethod)
+        {
+            if (watermarkingMethod == Workflow.ADVANCED_RGB_WATERMARKING)
+                return "Advanced RGB watermarking";
+            else if (watermarkingMethod == Workflow.LUMINANCE_RGB_WATERMARKING)
+                return "Luminance RGB watermarking";
+            return null;
+        }
+
+        public static int stringToWaterMethod(string watermarkingMethodItem)
+        {
+            if (watermarkingMethodItem == "Advanced RGB watermarking")
+                return Workflow.ADVANCED_RGB_WATERMARKING;
+            else if (watermarkingMethodItem == "Luminance RGB watermarking")
+                return Workflow.LUMINANCE_RGB_WATERMARKING;
+            return -1;
+        }
+        
+        private static string qualityParamToString(FREE_IMAGE_SAVE_FLAGS qualityFlag)
+        {
+            if (qualityFlag == FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYBAD)
+                return "JPEG Quality Bad";
+            else if (qualityFlag == FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYAVERAGE)
+                return "JPEG Quality Average";
+            else if (qualityFlag == FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYGOOD)
+                return "JPEG Quality Good";
+            else if (qualityFlag == FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYNORMAL)
+                return "JPEG Quality Normal";
+            else if (qualityFlag == FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYSUPERB)
+                return "JPEG Quality Superb";
+            else return null;
+        }
+
+        public static string chromaSubParamToString(FREE_IMAGE_SAVE_FLAGS qualityFlag)
+        {
+            if (qualityFlag == FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_411)
+                return "JPEG Chroma 4:1:1";
+            else if (qualityFlag == FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_420)
+                return "JPEG Chroma 4:2:0";
+            else if (qualityFlag == FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_422)
+                return "JPEG Chroma 4:2:2";
+            else if (qualityFlag == FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_444)
+                return "JPEG Chroma 4:4:4";
+            else return null;
+        }
+        
+        public static FREE_IMAGE_SAVE_FLAGS stringToQualityParam(string qualityFlag)
+        {
+            if (qualityFlag == "JPEG Quality Bad")
+                return FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYBAD;
+            else if (qualityFlag == "JPEG Quality Average")
+                return FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYAVERAGE;
+            else if (qualityFlag == "JPEG Quality Good")
+                return FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYGOOD;
+            else if (qualityFlag == "JPEG Quality Normal")
+                return FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYNORMAL;
+            else if (qualityFlag == "JPEG Quality Superb")
+                return FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYSUPERB;
+            else return FREE_IMAGE_SAVE_FLAGS.JPEG_QUALITYSUPERB; //non raggiungibile
+        }
+
+        public static FREE_IMAGE_SAVE_FLAGS stringToChromaSubParam(string qualityFlag)
+        {
+            if (qualityFlag == "JPEG Chroma 4:1:1")
+                return FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_411;
+            else if (qualityFlag == "JPEG Chroma 4:2:0")
+                return FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_420;
+            else if (qualityFlag == "JPEG Chroma 4:2:2")
+                return FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_422;
+            else if (qualityFlag == "JPEG Chroma 4:4:4")
+                return FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_444;
+            else return FREE_IMAGE_SAVE_FLAGS.JPEG_SUBSAMPLING_444; //non raggiungibile
+        }
 
         public static BitString[] getYDCHCode()
         {

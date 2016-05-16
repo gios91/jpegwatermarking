@@ -9,7 +9,7 @@ using JPEGEncoding;
 
 namespace JPEGWatermarking
 {
-    class JPEGDecoder : JPEGDecoderIF
+    public class JPEGDecoder : JPEGDecoderIF
     {
         public Tuple<byte[,], byte[,], byte[,]> getRGBMatrixFI(FIBITMAP jpeg)
         {
@@ -72,7 +72,15 @@ namespace JPEGWatermarking
         public Bitmap deserializeJpegImage(byte[] imageStream)
         {
             ImageConverter ic = new ImageConverter();
-            Image img = (Image)ic.ConvertFrom(imageStream);
+            Image img = null;
+            try {
+                img = (Image)ic.ConvertFrom(imageStream);
+            } catch (Exception e)
+            {
+                //non è possibile decodificare correttamente l'immagine per la presenza 
+                //di un numero eccessivo di errori burst
+                return null;
+            }
             return new Bitmap(img);
         }
 

@@ -98,7 +98,7 @@
     <Compile Include="ChannelEncoder.cs" />
     <Compile Include="ChannelDecoder.cs" />
     <Compile Include="ChannelErrorIF.cs" />
-    <Compile Include="ModuleTest.cs" />
+    <Compile Include="Workflow.cs" />
     <Compile Include="WatermarkingTestUtility.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="JPEGDecoder.cs" />

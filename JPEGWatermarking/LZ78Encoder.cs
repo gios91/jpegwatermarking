@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace LZ78Encoding
 {
-    class LZ78Encoder : LZ78EncoderIF
+    public class LZ78Encoder : LZ78EncoderIF
     {
         public Tuple<Dictionary<string, int[]>, Dictionary<int, string>> getEncoding(string stringToEncode)
         {

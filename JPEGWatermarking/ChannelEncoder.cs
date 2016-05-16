@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace JPEGWatermarking
 {
-    class ChannelEncoder : ChannelEncoderIF
+    public class ChannelEncoder : ChannelEncoderIF
     {
         public BitArray RipetizioneEncoding(byte[] stream, int numR)
         {

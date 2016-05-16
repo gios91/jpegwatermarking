@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 
 namespace JPEGWatermarking
 {
-    class ChannelError : ChannerErrorIF
+    public class ChannelError : ChannerErrorIF
     {
+        private int numBitSingleError = -1;
+
         public BitArray singleError(BitArray stream, double alpha)
         {
             ArrayList posError = new ArrayList();   //contiene le posizioni correntemente alterate dal canale
@@ -28,7 +30,13 @@ namespace JPEGWatermarking
                 else res[randomPos] = true;
                 posError.Add(randomPos);
             }
+            numBitSingleError = posError.Count;
             return res;
+        }
+
+        public int getNumBitSingleError()
+        {
+            return numBitSingleError;
         }
 
         private bool isContained(int randomPos, ArrayList posError)
@@ -39,7 +47,7 @@ namespace JPEGWatermarking
             return false;
         }
 
-        public BitArray gilberElliotBurstError(BitArray stream, double p, double r)
+        public Tuple<BitArray,BitArray> gilberElliotBurstError(BitArray stream, double p, double r)
         {
             BitArray noiseVector = new BitArray(stream.Length);
             getGilbertBurstNoiseVector(ref noiseVector, stream.Length, p, r);
@@ -57,11 +65,11 @@ namespace JPEGWatermarking
                     res[i] = stream[i];
                 }
             }
-            return res;
+            return Tuple.Create(res,noiseVector);
         }
 
 
-        private BitArray getGilbertBurstNoiseVector(ref BitArray noiseVector, int noiseVectorLen, double p, double r)
+        public BitArray getGilbertBurstNoiseVector(ref BitArray noiseVector, int noiseVectorLen, double p, double r)
         {
             /*     Matrice di Gilber Elliot (catena di Markov)
              *           G                B
@@ -77,7 +85,8 @@ namespace JPEGWatermarking
             // se lo stato corrente è G => noise[k] = 0, se invece stato corrente è B => noise[k] = 1
             bool state = false;
             //si definiscono i valori di probabilità
-            Console.WriteLine(" debug stato ");
+            
+            //noiseVectorLen = 1000;
 
             for (int k=0; k < noiseVectorLen; k++)
             {
