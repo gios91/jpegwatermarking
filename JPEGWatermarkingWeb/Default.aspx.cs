@@ -1,6 +1,8 @@
 ﻿using JPEGWatermarkingWeb.Controller;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Web;
 using System.Web.UI;
@@ -34,6 +36,7 @@ namespace JPEGWatermarkingWeb
             PageController.initializeModules();
             initJpegParamsList();
             initWatermarkingMethodsList();
+            initWatermarkingDecodingMethodsList();
             lz78OutputText.ReadOnly = true;
             logTextBox.ReadOnly = true;
             decodedWatermarkTextBox.ReadOnly = true;
@@ -72,8 +75,26 @@ namespace JPEGWatermarkingWeb
             }
             else if (!uploadImageRadioButton.Checked && sampleImageRadioButton.Checked)
             {
+                uploadedInputImage = false;
                 uploadDoneImage.ImageUrl = pathGreenBall;
                 inputImage.ImageUrl = pathInputImage;
+            }
+        }
+
+        protected void UploadInputText(object sender, EventArgs e)
+        {
+            if (inputTextUpload.HasFile)
+            {
+                string filename = null;
+                try
+                {
+                    filename = Path.GetFileName(inputTextUpload.FileName);
+                    string pathFile = HttpContext.Current.Server.MapPath("~/intext/")+ filename;
+                    inputTextUpload.SaveAs(pathFile);
+                    string inputText = PageController.readFromFile(pathFile);
+                    lz78InputText.Text = inputText;
+                }
+                catch (Exception ex) { }
             }
         }
 
@@ -103,6 +124,22 @@ namespace JPEGWatermarkingWeb
             downloadDesktopImageLabel.Text = "Salvata su: " + outputPath;
         }
         
+        protected void DownloadLogTextInfo(object sender, EventArgs e)
+        {
+            string time = DateTime.Now.ToString("dd_MM_yyyy_HH_mm_ss");
+            string filename = "watermarking_log_"+ time +".txt";
+            string outputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), filename);
+            StreamWriter logFile = null;
+            try
+            {
+                logFile = File.CreateText(outputPath); // creating file
+                logFile.Write(logTextBox.Text);
+                logFile.Close();
+                downloadLogFileLabel.Text = "Log salvato su: " + outputPath;
+            }
+            catch (Exception ex) { }
+        }
+
         protected void CodificaToJpeg(object sender, EventArgs e)
         {
             string resolvedInputPath = null;
@@ -152,6 +189,11 @@ namespace JPEGWatermarkingWeb
                     string errorText = "Numero di bit disponibili inferiore a quello di watermarking.";
                     esitoWatermarkingLabel.Text = errorText;
                     watermarkedImageASP.ImageUrl = pathRedCross;
+                    decodedImageASP.ImageUrl = pathRedCross;
+                    decodedImageASP2.ImageUrl = pathRedCross;
+                    downloadWatermarkedImageButton.Enabled = false;
+                    downloadDesktopImageLabel.Text = "Download non possibile";
+                    logTextBox.Text += PageController.getWatermarkingNotPossibleStats();
                     return;
                 }
             }
@@ -165,8 +207,11 @@ namespace JPEGWatermarkingWeb
                     string errorText = "Numero di bit disponibili inferiore a quello di watermarking.";
                     esitoWatermarkingLabel.Text = errorText;
                     watermarkedImageASP.ImageUrl = pathRedCross;
+                    decodedImageASP.ImageUrl = pathRedCross;
+                    decodedImageASP2.ImageUrl = pathRedCross;
                     downloadWatermarkedImageButton.Enabled = false;
                     downloadDesktopImageLabel.Text = "Download non possibile";
+                    logTextBox.Text += PageController.getWatermarkingNotPossibleStats();
                     return;
                 }
             }
@@ -186,58 +231,59 @@ namespace JPEGWatermarkingWeb
         
         protected void DoWatermarkingDecoding(object sender, EventArgs e)
         {
-            bool decodificabile = PageController.doWatermarkingDecoding();
-            if (!decodificabile)
+            try {
+                bool decodificabile = PageController.doWatermarkingDecoding();
+                if (!decodificabile)
+                {
+                    esitoDecodificaLabel.Text = "Watermark non decodificabile";
+                }
+                else
+                {
+                    esitoDecodificaLabel.Text = "Watermark decodificato con successo!";
+                    decodedWatermarkTextBox.Text = PageController.getDecodedWatermark();
+                    decodingWatermarkDone.ImageUrl = pathGreenBall;
+                }
+                string imageQualityStats = PageController.getImageQualityStats();
+                logTextBox.Text += imageQualityStats;
+                plotWatermarkingChart();
+                plotWatermarkingPercentageChart();
+                plotImageQualityChart();
+            }
+            catch (Exception ex)
             {
                 esitoDecodificaLabel.Text = "Watermark non decodificabile";
             }
-            else
-            {
-                esitoDecodificaLabel.Text = "Watermark decodificato con successo!";
-                decodedWatermarkTextBox.Text = PageController.getDecodedWatermark();
-                decodingWatermarkDone.ImageUrl = pathGreenBall;
-            }
-            string imageQualityStats = PageController.getImageQualityStats();
-            logTextBox.Text += imageQualityStats;
         }
-
-
-        protected void DoWatermarkingDecodingUploadedImage(object sender, EventArgs e)
-        {
-            //TODO
-        }
-
 
         protected void UploadWatermarkedImage(object sender, EventArgs e)
         {
-            //TODO
-
-            if (uploadImageRadioButton.Checked && !sampleImageRadioButton.Checked)
+            string pathImageToDecodeWatermark = null;
+            if (imageToDecodeUpload.HasFile)
             {
-                if (FileUploadControl.HasFile)
+                string filename = null;
+                try
                 {
-                    uploadedInputImage = true;
-                    string filename = null;
-                    try
-                    {
-                        filename = Path.GetFileName(FileUploadControl.FileName);
-                        FileUploadControl.SaveAs(Server.MapPath("~/img/upload/") + filename);
-                        uploadDoneImage.ImageUrl = pathGreenBall;
-                        pathInputUploadImage = "~/img/upload/" + filename;
-                        string newFilename = filename.Replace(".bmp", "");
-                        pathOutputUploadImage = "~/img/upload/" + newFilename + "_jpeg.jpg";
-                        pathOutputUploadWatermarkedImage = "~/img/upload/" + newFilename + "_jpeg_watermarked.jpg";
-                        outputUploadWatermarkedImageName = newFilename + "_jpeg_watermarked.jpg";
-                        pathOutputUploadDecodedImage = "~/img/upload/" + newFilename + "_jpeg_decoded.jpg";
-                    }
-                    catch (Exception ex) { }
-                    inputImage.ImageUrl = "img/upload/" + filename;
+                    filename = Path.GetFileName(imageToDecodeUpload.FileName);
+                    string realPath = HttpContext.Current.Server.MapPath("~/img/decodeUpload/") + filename;
+                    imageToDecodeUpload.SaveAs(realPath);
+                    pathImageToDecodeWatermark = "~/img/decodeUpload/" + filename;
                 }
+                catch (Exception ex) { }
+                uploadedImageForDecode.ImageUrl = pathImageToDecodeWatermark;
+                PageController.readInputImageToDecode(pathImageToDecodeWatermark);
             }
-            else if (!uploadImageRadioButton.Checked && sampleImageRadioButton.Checked)
+        }
+
+        protected void DoWatermarkingDecodingUploadedImage(object sender, EventArgs e)
+        {
+            string selectedWatermarkingMethodForDecoding = watermarkingMethodForDecodingRadioButton.SelectedItem.Text;
+            if (PageController.checkAdvRGBWatermarkingChosen(selectedWatermarkingMethodForDecoding))
             {
-                uploadDoneImage.ImageUrl = pathGreenBall;
-                inputImage.ImageUrl = pathInputImage;
+
+            }
+            else if (PageController.checkLuminanceRGBWatermarkingChosen(selectedWatermarkingMethodForDecoding))
+            {
+
             }
         }
 
@@ -261,7 +307,13 @@ namespace JPEGWatermarkingWeb
                 watermarkedImageASP.ImageUrl = pathOutputDecodedImage;
                 resolvedOutputDecodedImagePath = HttpContext.Current.Server.MapPath(pathOutputDecodedImage);
             }
-            if (singleErrorRadioButton.Checked && !burstErrorRadioButton.Checked)
+            if (singleErrorRadioButton.Checked && burstErrorRadioButton.Checked)
+            {
+                singleErrorRadioButton.Checked = false;
+                burstErrorRadioButton.Checked = false;
+                return;
+            }
+            else if (singleErrorRadioButton.Checked && !burstErrorRadioButton.Checked)
             {
                 string alphaString = alphaTextBox.Text;
                 double alpha = Double.Parse(alphaString);
@@ -323,6 +375,16 @@ namespace JPEGWatermarkingWeb
             //jpegChromaSubParams.Items[0].Selected = true;
         }
         
+        protected void UncheckSampleImageRadioButton(object sender, EventArgs e)
+        {
+           sampleImageRadioButton.Checked = false;
+        }
+
+        protected void UncheckUploadImageRadioButton(object sender, EventArgs e)
+        {
+           uploadImageRadioButton.Checked = false;
+        }
+
         private void initWatermarkingMethodsList()
         {
             if (watermarkingMethodRadioButton.Items.Count == 0)
@@ -333,7 +395,48 @@ namespace JPEGWatermarkingWeb
             }
             //watermarkingMethodRadioButton.Items[0].Selected = true;
         }
-        
+
+        private void initWatermarkingDecodingMethodsList()
+        {
+            if (watermarkingMethodForDecodingRadioButton.Items.Count == 0)
+            {
+                string[] watermarkingMethodsItems = PageController.getWatermarkingMethodsItems();
+                foreach (string item in watermarkingMethodsItems)
+                    watermarkingMethodForDecodingRadioButton.Items.Add(item);
+            }
+            //watermarkingMethodRadioButton.Items[0].Selected = true;
+        }
+
+        private void plotWatermarkingChart()
+        {
+            System.Web.UI.DataVisualization.Charting.Series bitWatermarkingSerie = WatermarkingChart.Series["BitWatermark"];
+            int numBitWatermark = PageController.getNumBitWatermark();
+            bitWatermarkingSerie.Points.AddXY("# bit watermark", numBitWatermark);
+            System.Web.UI.DataVisualization.Charting.Series bitAvailableSerie = WatermarkingChart.Series["BitAvailableForWatermarking"];
+            int numAvailableBit = PageController.getNumBitAvailableForWatermarking();
+            bitAvailableSerie.Points.AddXY("# bit per watermarking", numAvailableBit);
+        }
+
+        private void plotWatermarkingPercentageChart()
+        {
+            System.Web.UI.DataVisualization.Charting.Series bitWatermarkingSerie = PercentageChart.Series["BitWatermarkOnBitAvailable"];
+            double numBitWatermarkOnBitAvailable = PageController.getNumBitWatermarkOnBitAvailable();
+            bitWatermarkingSerie.Points.AddXY("# bit water / # bit disp.", numBitWatermarkOnBitAvailable);
+            System.Web.UI.DataVisualization.Charting.Series bitAvailableSerie = PercentageChart.Series["BitWatermarkOnBitImage"];
+            double numBitWatermarkOnBitImage = PageController.getNumBitWatermarkOnBitImage();
+            bitAvailableSerie.Points.AddXY("# bit water / # bit img", numBitWatermarkOnBitImage);
+        }
+
+        private void plotImageQualityChart()
+        {
+            System.Web.UI.DataVisualization.Charting.Series mseSerie = MSEChart.Series["MSE"];
+            double mse = PageController.getMSE();
+            mseSerie.Points.AddXY("MSE", mse);
+            System.Web.UI.DataVisualization.Charting.Series psnrSerie = MSEChart.Series["PSNR"];
+            double psnr = PageController.getPSNR();
+            psnrSerie.Points.AddXY("PSNR", psnr);
+        }
+
         private static void initTextBox()
         {   
             

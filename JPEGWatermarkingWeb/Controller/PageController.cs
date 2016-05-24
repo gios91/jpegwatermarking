@@ -20,6 +20,7 @@ namespace JPEGWatermarkingWeb.Controller
     {
         //riferimento alle immagini di input e watermarked
         public static FIBITMAP inputImage = new FIBITMAP();
+        public static FIBITMAP inputImageToDecode = new FIBITMAP();
         public static Bitmap jpegToSerialize;
         public static Bitmap decodedJpeg;
 
@@ -86,7 +87,7 @@ namespace JPEGWatermarkingWeb.Controller
                 return true;
             return false;
         }
-
+        
         internal static bool doWatermarkingDecoding()
         {
             bool decodificabile = Workflow.decodeWatermarking();
@@ -156,7 +157,57 @@ namespace JPEGWatermarkingWeb.Controller
             byte[,] BMatrixWater = watermarkingResult.Item3;
             Workflow.setWatermarkedRGBToJpeg(RMatrixWater, GMatrixWater, BMatrixWater, ref jpegToSerialize);
             writeWatermarkedJpeg(pathOutputWatermarkedImage);
+            printSelectedBlockImage();
             return true;
+        }
+
+        private static void printSelectedBlockImage()
+        {
+            Bitmap selectedBlockImage = new Bitmap(jpegToSerialize);
+            List<int[]> selBlock = Workflow.getSelectedBlocks(jpegToSerialize);
+            int dimX = selectedBlockImage.Width;
+            int dimY = selectedBlockImage.Height;
+            for (int i=0; i< dimX; i+=8) 
+                for (int j=0; j<dimY; j+=8)
+                {
+                    int[] row = new int[2];
+                    row[0] = i; row[1] = j;
+                    if(isContained(selBlock,row))
+                    {
+                        setWhiteBlock(ref selectedBlockImage, j, i);
+                    }
+                    else
+                    {
+                        setBlackBlock(ref selectedBlockImage, j, i);
+                    }
+                }
+            selectedBlockImage.Save(HttpContext.Current.Server.MapPath("img/luminanceSelBlockImage.jpg"), ImageFormat.Jpeg);
+        }
+
+        private static void setWhiteBlock(ref Bitmap image, int x, int y)
+        {
+            for (int i = x; i < x+8; i++)
+                for (int j = y; j < y+8; j++)
+                {
+                    image.SetPixel(i, j, Color.White);
+                }
+        }
+
+        private static void setBlackBlock(ref Bitmap image, int x, int y)
+        {
+            for (int i = x; i < x + 8; i++)
+                for (int j = y; j < y + 8; j++)
+                {
+                    image.SetPixel(i, j, Color.Black);
+                }
+        }
+
+        private static bool isContained(List<int[]> blockSequence, int[] colRow)
+        {
+            foreach (int[] idx in blockSequence)
+                if (idx[0] == colRow[0] && idx[1] == colRow[1])
+                    return true;
+            return false;
         }
 
         public static bool doRGBAdvancedWatermarking(string pathOutputWatermarkedImage)
@@ -228,6 +279,17 @@ namespace JPEGWatermarkingWeb.Controller
             inputImage = FreeImage.Load(FREE_IMAGE_FORMAT.FIF_BMP, inputImagePath, FREE_IMAGE_LOAD_FLAGS.DEFAULT);
         }
 
+        public static void readInputImageToDecode(string inputImagePath)
+        {
+            if (!File.Exists(inputImagePath))
+            {
+                Console.WriteLine(inputImagePath + " non può essere caricato. Errore.");
+                return;
+            }
+            inputImageToDecode = FreeImage.Load(FREE_IMAGE_FORMAT.FIF_JPEG, inputImagePath, FREE_IMAGE_LOAD_FLAGS.DEFAULT);
+        }
+
+
         public static void writeWatermarkedJpeg(string outputWatermarkedImagePath)
         {
             jpegToSerialize.Save(outputWatermarkedImagePath, ImageFormat.Jpeg);
@@ -238,17 +300,92 @@ namespace JPEGWatermarkingWeb.Controller
             decodedJpeg.Save(outputDecodedImagePath, ImageFormat.Jpeg);
         }
 
+        public static int getNumBitImage()
+        {
+            return (Int32) Workflow.numBitImage;
+        }
+
+        public static int getNumBitWatermark()
+        {
+            return (Int32) Workflow.numBitWatermarking;
+        }
+
+        public static int getNumBitAvailableForWatermarking()
+        {
+            return (Int32) Workflow.numAvailableBitImage;
+        }
+
+        public static double getNumBitWatermarkOnBitAvailable()
+        {
+            return Workflow.numBitWatermarking / Workflow.numAvailableBitImage;
+        }
+
+        public static double getNumBitWatermarkOnBitImage()
+        {
+            return Workflow.numBitWatermarking / Workflow.numBitImage;
+        }
+
+        public static int getMSE()
+        {
+            return (Int32)WatermarkingTestUtility.mseValue;
+        }
+
+        public static int getPSNR()
+        {
+            return (Int32)WatermarkingTestUtility.psnrValue;
+        }
+
+        public static string readFromFile(string pathFile)
+        {
+            string s = string.Empty;
+            using (var reader = new StreamReader(pathFile))
+            {
+                string line = string.Empty;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    s += line;
+                }
+            }
+            return Encoding.UTF8.GetString(Encoding.Default.GetBytes(s));
+        }
+
+        public static string getWatermarkingNotPossibleStats()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(">> +++ Watermarking Info +++ \n");
+            sb.Append(">> numero bit watermarking = " + Workflow.numBitWatermarking + " bit \n");
+            sb.Append(">> numero bit immagine = " + Workflow.numBitImage + " bit \n");
+            if (Workflow.chosenWatermarkingType == Workflow.ADVANCED_RGB_WATERMARKING)
+            {
+                sb.Append(">> numero bit livello 4 RGB = " + Workflow.numBitLevel4 + " bit \n");
+                sb.Append(String.Format(">> max bit disponibili per watermarking [Lvl 4] / bit watermarking (perc.) =  {0:0.00%} \n", (Workflow.numBitLevel4 / Workflow.numBitWatermarking)));
+            }
+            else if (Workflow.chosenWatermarkingType == Workflow.LUMINANCE_RGB_WATERMARKING)
+            {
+                sb.Append(">> numero blocchi Y selezionati = " + Workflow.numSelectedBlock + " \n");
+                sb.Append(">> numero blocchi Y non selezionati = " + Workflow.numNonSelectedBlock + " \n");
+                sb.Append(String.Format(">> numero blocchi Y selezionati / numero blocchi Y Non selezionati (perc.) =  {0:0.00%} \n", (Workflow.numSelectedBlock / Workflow.numNonSelectedBlock)));
+                sb.Append(String.Format(">> max bit disponibili per watermarking [Selected Block LSB = " + Workflow.numLSBSelectedBlock + ", Not Selected Block LSB = " + Workflow.numLSBNonSelectedBlock + "] = {0} \n", Workflow.numAvailableBitImage));
+                sb.Append(String.Format(">> max bit disponibili per watermarking [Selected Block LSB = " + Workflow.numLSBSelectedBlock + ", Not Selected Block LSB = " + Workflow.numLSBNonSelectedBlock + "] / bit watermarking (perc.) =  {0:0.00%} \n", (Workflow.numAvailableBitImage / Workflow.numBitWatermarking)));
+            }
+            sb.Append(">> * Tecnica watermarking = " + Workflow.getWatermarkingMethod() + "\n");
+            return sb.ToString();
+        }
+
         public static string getWatermarkingStats()
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(">> +++ Watermarking Info +++ \n");
+            sb.Append(">> * Tecnica watermarking = " + Workflow.getWatermarkingMethod() + "\n");
             sb.Append(">> numero bit watermarking = "+ Workflow.numBitWatermarking + " bit \n");
-            sb.Append(">> * Tecnica watermarking = "+ Workflow.getWatermarkingMethod()+ "\n");
             sb.Append(">> numero bit disponibili per watermarking = " + Workflow.numAvailableBitImage + " bit \n");
+            sb.Append(">> numero bit immagine = " + Workflow.numBitImage + " bit \n");
             sb.Append(String.Format(">> bit watermarking / bit disponibili per watermarking (perc.) =  {0:0.00%} \n", (Workflow.numBitWatermarking / Workflow.numAvailableBitImage)));
             sb.Append(String.Format(">> bit watermarking / bit totali immagine (perc.) =  {0:0.00%} \n", (Workflow.numBitWatermarking / Workflow.numBitImage)));
             if (Workflow.chosenWatermarkingType == Workflow.LUMINANCE_RGB_WATERMARKING)
             {
+                sb.Append(String.Format(">> max bit disponibili per watermarking [Selected Block LSB = " + Workflow.numLSBSelectedBlock + ", Not Selected Block LSB = " + Workflow.numLSBNonSelectedBlock + "] = {0} \n", Workflow.numAvailableBitImage));
+                sb.Append(String.Format(">> max bit disponibili per watermarking [Selected Block LSB = " + Workflow.numLSBSelectedBlock + ", Not Selected Block LSB = " + Workflow.numLSBNonSelectedBlock + "] / bit watermarking (perc.) =  {0:0.00%} \n", (Workflow.numAvailableBitImage / Workflow.numBitWatermarking)));
                 sb.Append(">> numero blocchi Y selezionati = " + Workflow.numSelectedBlock + " \n");
                 sb.Append(">> numero blocchi Y non selezionati = " + Workflow.numNonSelectedBlock + " \n");
                 sb.Append(String.Format(">> numero blocchi Y selezionati / numero blocchi Y Non selezionati (perc.) =  {0:0.00%} \n", (Workflow.numSelectedBlock / Workflow.numNonSelectedBlock)));
@@ -266,14 +403,14 @@ namespace JPEGWatermarkingWeb.Controller
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(">> +++ Channel Error Info +++ \n");
-            sb.Append(String.Format(">> codifica di canale = R({0},1 \n)", Workflow.numRipetizioni));
+            sb.Append(String.Format(">> codifica di canale = R({0},1) \n", Workflow.numRipetizioni));
             if (Workflow.chosenChannelErrorModel == Workflow.SINGLE_ERROR_CHANNEL)
             {
                 sb.Append(">> tipo di errore di canale = SINGLE ERROR \n");
                 sb.Append(">> alpha = " + Workflow.alphaChError + " \n");
                 double numBitStream = Workflow.channelCodedStream.Count;
                 double numBitError = Workflow.channelError.getNumBitSingleError();
-                sb.Append(">> num bit alterati = " + numBitError);
+                sb.Append(String.Format(">> num bit alterati = {0} \n", numBitError));
                 sb.Append(String.Format(">> bit alterati / bit stream (perc.) =  {0:0.00%} \n", (numBitError / numBitStream)));
             }
             else if (Workflow.chosenChannelErrorModel == Workflow.GILBERT_ELLIOT_BURST_CHANNEL)

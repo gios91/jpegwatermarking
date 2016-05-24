@@ -951,7 +951,10 @@ namespace JPEGWatermarking
             int[] numLSBForLevel = { 0, 3, 6, 9, 12 };
             int rows = R.GetLength(0);
             int columns = R.GetLength(1);
-            bool[] temp = new bool[rows * columns * numLSBForLevel[numLSBSelectedBlock]]; //massima dimensione dei dati memorizzabile nell'immagine (in bit)
+            int maxLSBForBlock = numLSBSelectedBlock;
+            if (numLSBSelectedBlock < numLSBNonSelectedBlock)
+                maxLSBForBlock = numLSBNonSelectedBlock;
+            bool[] temp = new bool[rows * columns * numLSBForLevel[maxLSBForBlock]]; //massima dimensione dei dati memorizzabile nell'immagine (in bit)
             int cntTemp = 0;
             for (int i = 0; i < rows; i += 8)
                 for (int j = 0; j < columns; j += 8)

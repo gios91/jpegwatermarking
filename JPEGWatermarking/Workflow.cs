@@ -76,6 +76,7 @@ namespace JPEGWatermarking
         public static double numBitWatermarking { get; set; }
         public static double numBitImage { get; set; }
         public static double numAvailableBitImage { get; set; }
+        public static double numBitLevel4 { get; set; }
 
         //paramtri per advanced rgb watermarking
         public static int numRGBWatermarkingLevel { get; set; }
@@ -529,8 +530,13 @@ namespace JPEGWatermarking
             byte[,] GMatrixJPG = jpegRGB.Item2;
             byte[,] BMatrixJPG = jpegRGB.Item3;
             numBitImage = RMatrixJPG.GetLength(0) * RMatrixJPG.GetLength(1) * 8 * 3;
+            numBitLevel4 = RMatrixJPG.GetLength(0) * RMatrixJPG.GetLength(1) * 4 * 3;
             // scrittura watermarking su RGB del JPEG
             Tuple<byte[,], byte[,], byte[,], int> advWater = waterEncoder.doAdvancedRGBWatermarking(RMatrixJPG, GMatrixJPG, BMatrixJPG, watermarking);
+            if (advWater == null)
+            {   //i bit disponibili per il watermarking non sono sufficienti
+                return null;
+            }
             byte[,] RMatrixWater = advWater.Item1;
             byte[,] GMatrixWater = advWater.Item2;
             byte[,] BMatrixWater = advWater.Item3;
@@ -558,6 +564,18 @@ namespace JPEGWatermarking
             numNonSelectedBlock = numBlock - numSelectedBlock;
             numAvailableBitImage = (64 * (numLSBSelectedBlock * 3) * numSelectedBlock) + (64 * (numLSBNonSelectedBlock * 3) * numNonSelectedBlock);
             return lumWater;
+        }
+
+        //utile a prelevare i blocchi selezionati per stamparli in un'immagine di output
+        public static List<int[]> getSelectedBlocks(Bitmap jpegToSerialize)
+        {
+            Tuple<byte[,], byte[,], byte[,]> jpegRGB = jpegDecoder.getRGBMatrix(jpegToSerialize);
+            byte[,] RMatrixJPG = jpegRGB.Item1;
+            byte[,] GMatrixJPG = jpegRGB.Item2;
+            byte[,] BMatrixJPG = jpegRGB.Item3;
+            numBitImage = RMatrixJPG.GetLength(0) * RMatrixJPG.GetLength(1) * 8 * 3;
+            Tuple<float[,], float[,], float[,]> jpegYcbcr = jpegDecoder.getYCbCrMatrix(RMatrixJPG, GMatrixJPG, BMatrixJPG);
+            return waterEncoder.getBlocksForYWatermarking(jpegYcbcr.Item1, delta);
         }
 
         public static Tuple<byte[,], byte[,], byte[,]> writeWatermarkingOnJpegRgb(byte[] watermarking)

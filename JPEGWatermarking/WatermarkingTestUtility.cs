@@ -11,7 +11,10 @@ namespace JPEGWatermarking
         /*
          *   MSE = (1 / N * M) * ( sum i ( sum j ( X[i,j] - Y[i,j] )^2 ) ) , X = Y original image, Y = Y watermarked image
          */
-         
+
+        public static float mseValue;
+        public static float psnrValue;
+        
         public static float getMSE(float[,] YMatrixOriginal, float[,] YMatrixWater)
         {
             int rows = YMatrixOriginal.GetLength(0);
@@ -23,7 +26,9 @@ namespace JPEGWatermarking
                     float diff = YMatrixOriginal[i,j] - YMatrixWater[i, j];
                     mse += (float) Math.Pow(diff, 2);
                 }
-            return mse / (rows * colums);
+            float mseVal = mse / (rows * colums);
+            mseValue = mseVal;
+            return mseValue;
         }
 
         /*
@@ -34,6 +39,7 @@ namespace JPEGWatermarking
         {
             float pixelMaxValue = (float) (Math.Pow(2, bitPrecision) - 1);
             float psnr = (float) (10 * Math.Log10( Math.Pow(pixelMaxValue,2) / MSE));
+            psnrValue = psnr;
             return psnr;
         }
 

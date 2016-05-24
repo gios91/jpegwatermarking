@@ -40,15 +40,6 @@ namespace JPEGWatermarkingWeb {
         protected global::System.Web.UI.UpdateProgress UpdateProgress1;
         
         /// <summary>
-        /// UpdatePanel1 control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.UpdatePanel UpdatePanel1;
-        
-        /// <summary>
         /// lz78InputText control.
         /// </summary>
         /// <remarks>
@@ -58,13 +49,31 @@ namespace JPEGWatermarkingWeb {
         protected global::System.Web.UI.WebControls.TextBox lz78InputText;
         
         /// <summary>
-        /// lz78Button control.
+        /// inputTextUpload control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button lz78Button;
+        protected global::System.Web.UI.WebControls.FileUpload inputTextUpload;
+        
+        /// <summary>
+        /// uploadInputText control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button uploadInputText;
+        
+        /// <summary>
+        /// UpdatePanel1 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.UpdatePanel UpdatePanel1;
         
         /// <summary>
         /// lz78OutputText control.
@@ -76,6 +85,15 @@ namespace JPEGWatermarkingWeb {
         protected global::System.Web.UI.WebControls.TextBox lz78OutputText;
         
         /// <summary>
+        /// lz78Button control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button lz78Button;
+        
+        /// <summary>
         /// UpdateProgress2 control.
         /// </summary>
         /// <remarks>
@@ -83,6 +101,33 @@ namespace JPEGWatermarkingWeb {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.UpdateProgress UpdateProgress2;
+        
+        /// <summary>
+        /// UpdatePanel9 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.UpdatePanel UpdatePanel9;
+        
+        /// <summary>
+        /// uploadImageRadioButton control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton uploadImageRadioButton;
+        
+        /// <summary>
+        /// sampleImageRadioButton control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton sampleImageRadioButton;
         
         /// <summary>
         /// FileUploadControl control.
@@ -110,24 +155,6 @@ namespace JPEGWatermarkingWeb {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Image uploadDoneImage;
-        
-        /// <summary>
-        /// uploadImageRadioButton control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton uploadImageRadioButton;
-        
-        /// <summary>
-        /// sampleImageRadioButton control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton sampleImageRadioButton;
         
         /// <summary>
         /// inputImage control.
@@ -481,6 +508,60 @@ namespace JPEGWatermarkingWeb {
         protected global::System.Web.UI.WebControls.TextBox logTextBox;
         
         /// <summary>
+        /// saveInfoButton control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button saveInfoButton;
+        
+        /// <summary>
+        /// downloadLogFileLabel control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label downloadLogFileLabel;
+        
+        /// <summary>
+        /// UpdatePanel8 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.UpdatePanel UpdatePanel8;
+        
+        /// <summary>
+        /// WatermarkingChart control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.DataVisualization.Charting.Chart WatermarkingChart;
+        
+        /// <summary>
+        /// PercentageChart control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.DataVisualization.Charting.Chart PercentageChart;
+        
+        /// <summary>
+        /// MSEChart control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.DataVisualization.Charting.Chart MSEChart;
+        
+        /// <summary>
         /// UpdateProgress5 control.
         /// </summary>
         /// <remarks>
@@ -490,22 +571,13 @@ namespace JPEGWatermarkingWeb {
         protected global::System.Web.UI.UpdateProgress UpdateProgress5;
         
         /// <summary>
-        /// watermarkingMethodForDecoding control.
+        /// imageToDecodeUpload control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButtonList watermarkingMethodForDecoding;
-        
-        /// <summary>
-        /// FileUpload1 control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.FileUpload FileUpload1;
+        protected global::System.Web.UI.WebControls.FileUpload imageToDecodeUpload;
         
         /// <summary>
         /// Button7 control.
@@ -517,22 +589,31 @@ namespace JPEGWatermarkingWeb {
         protected global::System.Web.UI.WebControls.Button Button7;
         
         /// <summary>
-        /// Image1 control.
+        /// uploadedImageForDecode control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Image Image1;
+        protected global::System.Web.UI.WebControls.Image uploadedImageForDecode;
         
         /// <summary>
-        /// Button5 control.
+        /// Label2 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button Button5;
+        protected global::System.Web.UI.WebControls.Label Label2;
+        
+        /// <summary>
+        /// watermarkingMethodForDecodingRadioButton control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButtonList watermarkingMethodForDecodingRadioButton;
         
         /// <summary>
         /// UpdatePanel7 control.
@@ -569,5 +650,14 @@ namespace JPEGWatermarkingWeb {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox decodificaUploadWaterImage;
+        
+        /// <summary>
+        /// Button5 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button Button5;
     }
 }
